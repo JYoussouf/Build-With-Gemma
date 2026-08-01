@@ -3,6 +3,7 @@ import { ruleFireCounts } from "@/lib/models/activity";
 import { ModelDescriptor } from "@/lib/models/registry";
 import { Telemetry } from "@/lib/types";
 
+import { Collapsible } from "@/components/internals/models/Collapsible";
 import { ParameterTable } from "./ParameterTable";
 
 import alertRules from "@data/config/alert-rules.json";
@@ -38,12 +39,7 @@ export function ModelDetail({ model, activity, telemetry }: Props) {
 
       <ActivityStrip activity={activity} />
 
-      <section className="rounded-md border border-pit-border bg-pit-panel/80">
-        <header className="border-b border-pit-border px-3 py-2">
-          <h2 className="text-[11px] font-medium tracking-[0.14em] text-ink-secondary uppercase">
-            Inputs
-          </h2>
-        </header>
+      <Collapsible title="Inputs" count={model.inputs.length}>
         <ul className="divide-y divide-pit-border/60">
           {model.inputs.map((input) => (
             <li
@@ -56,9 +52,12 @@ export function ModelDetail({ model, activity, telemetry }: Props) {
             </li>
           ))}
         </ul>
-      </section>
+      </Collapsible>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* One column: a two-column grid of collapsed headers reads as a form
+          rather than a contents list, and pairs unrelated groups side by
+          side. */}
+      <div className="grid gap-3">
         {model.groups.map((group) => (
           <ParameterTable key={group.title} group={group} />
         ))}
@@ -112,12 +111,10 @@ function RuleFires({ telemetry }: { telemetry: Telemetry | null }) {
   const counts = ruleFireCounts(telemetry);
 
   return (
-    <section className="rounded-md border border-pit-border bg-pit-panel/80">
-      <header className="border-b border-pit-border px-3 py-2">
-        <h2 className="text-[11px] font-medium tracking-[0.14em] text-ink-secondary uppercase">
-          Fires this session
-        </h2>
-      </header>
+    <Collapsible
+      title="Fires this session"
+      count={telemetry === null ? undefined : counts.size}
+    >
       {telemetry === null ? (
         <p className="px-3 py-2 text-[11px] text-ink-muted">
           Start a race to see which rules trip.
@@ -146,6 +143,6 @@ function RuleFires({ telemetry }: { telemetry: Telemetry | null }) {
           })}
         </ul>
       )}
-    </section>
+    </Collapsible>
   );
 }

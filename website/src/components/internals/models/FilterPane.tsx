@@ -218,7 +218,7 @@ function Section({
 }: {
   n: number;
   title: string;
-  blurb: string;
+  blurb?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -228,9 +228,11 @@ function Section({
           <span className="font-mono text-[10px] text-ink-muted">{n}</span>
           {title}
         </h2>
-        <p className="mt-0.5 max-w-[70ch] text-[11px] leading-relaxed text-ink-muted">
-          {blurb}
-        </p>
+        {blurb && (
+          <p className="mt-0.5 max-w-[70ch] text-[11px] leading-relaxed text-ink-muted">
+            {blurb}
+          </p>
+        )}
       </header>
       {children}
     </section>
