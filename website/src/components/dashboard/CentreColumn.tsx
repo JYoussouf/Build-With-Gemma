@@ -5,6 +5,7 @@ import { Bar, LabeledBar, Metric, StatusDot } from "@/components/ui/Readouts";
 import { levelFor, signed } from "@/lib/format";
 import { useRaceStore, useSnapshot } from "@/lib/store";
 import { Corners } from "@/lib/types";
+import { ModelName } from "@/components/dashboard/ProducerBadge";
 
 /**
  * Middle column. Laid out as fixed rows rather than a scrolling stack: the
@@ -263,8 +264,13 @@ function GemmaFeed() {
   const messages = useSnapshot((f) => f.agentMessages);
   return (
     <div className="mt-3 rounded border border-pit-border bg-pit-panel-2">
-      <div className="border-b border-pit-border px-2.5 py-1.5 text-[10px] tracking-[0.14em] text-ink-secondary uppercase">
-        Gemma says
+      <div className="flex flex-wrap items-center justify-between gap-x-2 border-b border-pit-border px-2.5 py-1.5">
+        <span className="text-[10px] tracking-[0.14em] text-ink-secondary uppercase">
+          Gemma says
+        </span>
+        {/* Attribution on agent output, from config rather than a literal
+            (feedback round-01 F4/Q3). */}
+        <ModelName />
       </div>
       <ul className="max-h-40 space-y-2 overflow-y-auto px-2.5 py-2">
         {messages.map((m) => (

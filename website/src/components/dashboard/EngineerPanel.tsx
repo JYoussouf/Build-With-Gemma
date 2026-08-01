@@ -5,7 +5,12 @@ import { Panel } from "@/components/ui/Panel";
 import { StatusDot } from "@/components/ui/Readouts";
 import { severityLevel } from "@/lib/format";
 import { useRaceStore, useSnapshot } from "@/lib/store";
-import { Alert } from "@/lib/types";
+import { Alert, AlertTier } from "@/lib/types";
+import {
+  ProducerBadge,
+  ProducerHeading,
+  ThinkingLine,
+} from "@/components/dashboard/ProducerBadge";
 
 /** Beyond this, the queue is summarised so the rules below stay reachable. */
 const MAX_VISIBLE_PENDING = 2;
@@ -67,8 +72,13 @@ function PendingApprovals() {
 function AnomalyCard({ alert }: { alert: Alert }) {
   const approveAlert = useRaceStore((s) => s.approveAlert);
   const dismissAlert = useRaceStore((s) => s.dismissAlert);
+  // A recording is a record of what was decided, not a queue to decide on.
+  const replay = useRaceStore((s) => s.mode === "replay");
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(alert.recommendation ?? alert.message);
+  const [edited, setEdited] = useState<string | null>(null);
+  // Until the engineer types, the draft tracks Gemma's recommendation, which
+  // arrives a few seconds after the card does.
+  const draft = edited ?? alert.recommendation ?? alert.message;
   const level = severityLevel(alert.severity);
 
   return (
@@ -85,6 +95,10 @@ function AnomalyCard({ alert }: { alert: Alert }) {
         </span>
       </header>
 
+      <div className="mt-1.5">
+        <ProducerBadge tier={alert.tier} />
+      </div>
+
       <h3 className="mt-1.5 text-[13px] text-ink">{alert.title}</h3>
 
       <ul className="mt-1.5 space-y-0.5">
@@ -96,16 +110,31 @@ function AnomalyCard({ alert }: { alert: Alert }) {
         ))}
       </ul>
 
-      <p className="mt-2 text-[12px] leading-snug text-ink-body">{alert.message}</p>
+      {alert.interpreting ? (
+        <div className="mt-2 border-t border-pit-border pt-2">
+          <ThinkingLine />
+        </div>
+      ) : (
+        <p className="mt-2 text-[12px] leading-snug text-ink-body">
+          <span className="text-[10px] tracking-[0.1em] text-ink-muted uppercase">
+            Reading{" "}
+          </span>
+          {alert.message}
+        </p>
+      )}
 
-      <div className="mt-2 border-t border-pit-border pt-2">
+      <div
+        className={`mt-2 border-t border-pit-border pt-2 ${
+          alert.interpreting ? "hidden" : ""
+        }`}
+      >
         <div className="text-[10px] tracking-[0.12em] text-ink-muted uppercase">
           To driver
         </div>
         {editing ? (
           <textarea
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => setEdited(e.target.value)}
             rows={3}
             className="mt-1 w-full resize-none rounded border border-pit-border bg-pit-black p-1.5 text-[12px] text-ink outline-none focus:border-ink"
           />
@@ -114,7 +143,12 @@ function AnomalyCard({ alert }: { alert: Alert }) {
         )}
       </div>
 
-      <div className="mt-2 flex gap-1.5">
+      {replay ? (
+        <p className="mt-2 text-[10px] tracking-[0.1em] text-ink-muted uppercase">
+          Recorded · {alert.status === "sent" ? "reached driver" : alert.status}
+        </p>
+      ) : (
+      <div className={`mt-2 flex gap-1.5 ${alert.interpreting ? "hidden" : ""}`}>
         <button
           onClick={() => approveAlert(alert.id, draft)}
           className="flex-1 rounded border border-ink px-2 py-1.5 text-[11px] tracking-[0.1em] text-ink uppercase hover:bg-[#1c1c1c]"
@@ -134,6 +168,7 @@ function AnomalyCard({ alert }: { alert: Alert }) {
           Dismiss
         </button>
       </div>
+      )}
     </article>
   );
 }
@@ -244,36 +279,88 @@ const STATUS_LABEL = {
   dismissed: "DISMISSED",
 } as const;
 
+/**
+ * Alert history, grouped by what produced each item rather than by time
+ * (feedback round-01 F5).
+ *
+ * Chronological order buried the model's contribution among rule firings —
+ * a threshold crossing and a Gemma reading looked identical in the list.
+ * Grouping by producer makes that difference the first thing read, which is
+ * the point F4 and F5 are jointly making.
+ *
+ * The model group is listed first and kept visible even when empty, so its
+ * absence reads as "nothing flagged yet" rather than the section not existing.
+ */
+const GROUP_ORDER: AlertTier[] = ["2c", "2b", "2a"];
+
 function AlertHistory() {
   const alerts = useSnapshot((f) => f.alerts);
+
+  const grouped = useMemo(() => {
+    const by: Record<AlertTier, Alert[]> = { "2a": [], "2b": [], "2c": [] };
+    for (const a of alerts) by[a.tier].push(a);
+    return by;
+  }, [alerts]);
+
   return (
-    <Panel title="Alert history" className="min-h-[180px] flex-1" bodyClassName="overflow-y-auto">
-      {alerts.length === 0 ? (
-        <p className="text-[12px] text-ink-muted">No alerts yet this race.</p>
-      ) : (
-        <ul className="space-y-1">
-          {alerts.map((a) => (
-            <li
-              key={a.id}
-              className="flex items-center gap-2 border-b border-pit-border/60 py-1 last:border-0"
-            >
-              <span className="tnum w-9 text-[11px] text-ink-muted">L{a.lap}</span>
-              <span className="w-6 text-[11px] text-ink-secondary">{a.tier}</span>
-              <span className="flex-1 truncate text-[12px] text-ink-body">{a.title}</span>
-              <span className="flex items-center gap-1.5">
-                <StatusDot
-                  level={
-                    a.status === "sent" ? "ok" : a.status === "pending" ? "warn" : "crit"
-                  }
-                />
-                <span className="w-20 text-right text-[10px] text-ink-secondary">
-                  {STATUS_LABEL[a.status]}
-                </span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+    <Panel
+      title="Alert history"
+      className="min-h-[180px] flex-1"
+      bodyClassName="overflow-y-auto"
+      action={
+        <span className="tnum text-[11px] text-ink-muted">
+          {alerts.length} total
+        </span>
+      }
+    >
+      <div className="space-y-3">
+        {GROUP_ORDER.map((tier) => {
+          const group = grouped[tier];
+          if (group.length === 0 && tier !== "2c") return null;
+          return (
+            <section key={tier}>
+              <header className="border-b border-pit-border pb-1">
+                <ProducerHeading tier={tier} />
+              </header>
+              {group.length === 0 ? (
+                <p className="pt-1.5 text-[11px] text-ink-muted">
+                  Nothing flagged yet.
+                </p>
+              ) : (
+                <ul>
+                  {group.map((a) => (
+                    <li
+                      key={a.id}
+                      className="flex items-center gap-2 border-b border-pit-border/40 py-1 last:border-0"
+                    >
+                      <span className="tnum w-8 shrink-0 text-[11px] text-ink-muted">
+                        L{a.lap}
+                      </span>
+                      <span className="flex-1 truncate text-[12px] text-ink-body">
+                        {a.interpreting ? "Interpreting…" : a.title}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1.5">
+                        <StatusDot
+                          level={
+                            a.status === "sent"
+                              ? "ok"
+                              : a.status === "pending"
+                                ? "warn"
+                                : "crit"
+                          }
+                        />
+                        <span className="w-20 text-right text-[10px] text-ink-secondary">
+                          {STATUS_LABEL[a.status]}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          );
+        })}
+      </div>
     </Panel>
   );
 }

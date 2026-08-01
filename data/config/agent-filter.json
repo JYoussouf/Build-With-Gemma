@@ -1,0 +1,48 @@
+{
+  "description": "Agent-In-The-Loop filter (docs/superpowers/specs/2026-08-01-internals-models-view-design.md). Every engineer decision on a 2c anomaly is feedback. Gemma condenses the decision history into suppression rules that would act as a final unsupervised filter on TimesFM output. DEMONSTRATION ONLY: nothing in the product is suppressed. The compile step is canned and no model is invoked.",
+  "enabled": true,
+  "mode": "shadow",
+  "support_threshold": 2,
+  "max_rules": 8,
+  "prompt_template": "You are tuning the anomaly filter for a Formula 1 race engineer.\n\nBelow is every decision the engineer made on anomalies raised by TimesFM this\nsession. APPROVED means the anomaly was worth their attention. MODIFIED means\nit was worth raising but worded wrongly. DISMISSED means it was noise.\n\n{{decisions}}\n\nCondense the dismissals into the smallest set of suppression rules that would\nhave spared the engineer the noise without hiding anything they approved.\nEmit one rule per line as JSON with the keys: statement, predicate, action.\nUse only these predicate forms:\n  {\"channel\": \"<glob>\", \"sigma\": {\"<\": <number>}}\n  {\"severity\": \"<low|medium|high|critical>\"}\n  {\"tag\": \"<template id>\"}\nCite the alert ids that justify each rule. Emit nothing you cannot justify\nfrom at least {{support_threshold}} decisions.",
+  "rule_catalogue": [
+    {
+      "kind": "channel-sigma",
+      "label": "Channel below sigma",
+      "description": "Repeated dismissals of anomalies on one channel family, all below some deviation. Suppresses the quiet end of a noisy channel while leaving the loud end alone.",
+      "statement": "{{channel}} anomalies below {{sigma}} sigma are not worth surfacing."
+    },
+    {
+      "kind": "severity",
+      "label": "Severity floor",
+      "description": "Repeated dismissals sharing a severity. Suppresses a whole severity band the engineer has shown they do not act on.",
+      "statement": "{{severity}} severity anomalies are not worth surfacing."
+    },
+    {
+      "kind": "tag",
+      "label": "Template tag",
+      "description": "Repeated dismissals of the same anomaly template. Suppresses one recurring diagnosis the engineer has judged benign on this car.",
+      "statement": "Anomalies tagged {{tag}} are not worth surfacing."
+    }
+  ],
+  "seeded_rules": [
+    {
+      "id": "seed-ers-soc-decay",
+      "kind": "tag",
+      "statement": "Anomalies tagged ers-soc-decay are not worth surfacing.",
+      "predicate": { "tag": "ers-soc-decay" },
+      "action": "suppress",
+      "confidence": 0.71,
+      "note": "Carried in from the previous race weekend. The deployment model was recalibrated after Friday practice and this template has been benign since."
+    },
+    {
+      "id": "seed-fuel-flow-low-sigma",
+      "kind": "channel-sigma",
+      "statement": "fuel_flow_* anomalies below 2.5 sigma are not worth surfacing.",
+      "predicate": { "channel": "fuel_flow_*", "sigma": { "<": 2.5 } },
+      "action": "suppress",
+      "confidence": 0.64,
+      "note": "Carried in from the previous race weekend. Flow oscillation on throttle pickup is characteristic of this power unit."
+    }
+  ]
+}

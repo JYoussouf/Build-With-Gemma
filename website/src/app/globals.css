@@ -111,3 +111,25 @@ body {
     transparent 12px
   );
 }
+
+/* Gemma working, between TimesFM flagging and the interpretation arriving. */
+@keyframes thinking-pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+.thinking-dot {
+  animation: thinking-pulse 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thinking-dot {
+    animation: none;
+    opacity: 0.7;
+  }
+}

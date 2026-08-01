@@ -2,8 +2,8 @@ import Link from "next/link";
 
 const BUILT = [
   {
-    href: "/dashboard",
-    title: "Pit Wall — Live Race Dashboard",
+    href: "/live",
+    title: "Live — Race Dashboard",
     detail:
       "View 4. Track map, full telemetry, Gemma strategy, and the engineer control panel with the 2c approval queue.",
   },

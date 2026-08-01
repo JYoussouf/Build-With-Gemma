@@ -13,7 +13,7 @@ import {
 } from "./protocol";
 import { createSmoothingState, publish } from "./snapshot";
 import { DEFAULT_TRACK_KEY } from "./track";
-import { Compound, Telemetry } from "./types";
+import { Alert, Compound, LapSummary, Telemetry } from "./types";
 
 /**
  * Client-side race state.
@@ -40,7 +40,19 @@ const WS_URL = process.env.NEXT_PUBLIC_RACE_WS_URL ?? DEFAULT_WS_URL;
 const RECONNECT_MIN_MS = 500;
 const RECONNECT_MAX_MS = 8000;
 
+/**
+ * Where the dashboard's state is coming from.
+ *
+ * "live" is the server feed. "replay" is a recording driving the same store,
+ * which is what lets the pit wall render a past run without a second set of
+ * components that could drift from the live ones.
+ */
+export type SourceMode = "live" | "replay";
+
 interface RaceStore {
+  mode: SourceMode;
+  /** Playhead into the loaded recording. */
+  replayIndex: number;
   connection: ConnectionState;
   /** What the server last sent, unpacked. Null until the first snapshot. */
   telemetry: Telemetry | null;
@@ -64,9 +76,36 @@ interface RaceStore {
   toggleRunning: () => void;
   reset: () => void;
   setTrack: (key: string) => void;
+  startDriving: () => void;
+  stopDriving: () => void;
   approveAlert: (id: string, message?: string) => void;
   dismissAlert: (id: string) => void;
   pitStop: (compound: Compound) => void;
+
+  /**
+   * Point the store at a recording. Live messages are ignored until
+   * `exitReplay`, so a frame arriving from the server cannot overwrite the
+   * playhead mid-scrub.
+   */
+  enterReplay: (run: ReplayRun) => void;
+  exitReplay: () => void;
+  /** Render the recording at `index`. */
+  seekReplay: (index: number) => void;
+}
+
+/** A recording loaded and ready to drive the store. */
+export interface ReplayRun {
+  trackKey: string;
+  trackName: string;
+  totalLaps: number;
+  frames: TelemetryFrame[];
+  laps: LapSummary[];
+  alerts: Alert[];
+  /** Fuel load for the run, which frames do not carry. */
+  fuelStartKg: number;
+  fuelTargetPerLapKg: number;
+  /** Reference lap time for the delta column, from the run's own fastest. */
+  targetLapTimeS: number;
 }
 
 let socket: WebSocket | null = null;
@@ -78,13 +117,18 @@ function sendToServer(message: ClientMessage) {
   }
 }
 
+/** The loaded recording. Outside the store: it is large and never rendered. */
+let replayRun: ReplayRun | null = null;
+
 export const useRaceStore = create<RaceStore>((set, get) => ({
+  mode: "live",
+  replayIndex: 0,
   connection: "connecting",
   telemetry: null,
   display: null,
   frame: null,
   meta: null,
-  control: { running: true, speedMultiplier: 4 },
+  control: { driving: false, running: true, speedMultiplier: 4 },
   trackKey: DEFAULT_TRACK_KEY,
 
   setSpeedMultiplier: (multiplier) =>
@@ -93,9 +137,95 @@ export const useRaceStore = create<RaceStore>((set, get) => ({
     sendToServer({ type: "setRunning", running: !get().control.running }),
   reset: () => sendToServer({ type: "reset" }),
   setTrack: (key) => sendToServer({ type: "setTrack", key }),
-  approveAlert: (id, message) => sendToServer({ type: "approve", id, message }),
-  dismissAlert: (id) => sendToServer({ type: "dismiss", id }),
-  pitStop: (compound) => sendToServer({ type: "pit", compound }),
+  startDriving: () => sendToServer({ type: "startDriving" }),
+  stopDriving: () => sendToServer({ type: "stopDriving" }),
+  // Guarded: in replay these would reach the live server and mutate a race
+  // the viewer is not looking at. The panel also hides the controls, but the
+  // guard is here so no future caller can bypass it.
+  approveAlert: (id, message) => {
+    if (get().mode === "replay") return;
+    sendToServer({ type: "approve", id, message });
+  },
+  dismissAlert: (id) => {
+    if (get().mode === "replay") return;
+    sendToServer({ type: "dismiss", id });
+  },
+  pitStop: (compound) => {
+    if (get().mode === "replay") return;
+    sendToServer({ type: "pit", compound });
+  },
+
+  enterReplay: (run) => {
+    replayRun = run;
+    set({
+      mode: "replay",
+      trackKey: run.trackKey,
+      meta: {
+        raceId: `replay-${run.trackKey}`,
+        trackKey: run.trackKey,
+        trackName: run.trackName,
+        totalLaps: run.totalLaps,
+      },
+    });
+    get().seekReplay(0);
+  },
+
+  exitReplay: () => {
+    replayRun = null;
+    // Null the projection rather than leaving the last replayed frame behind,
+    // so the gate holds until the live server has sent a real snapshot.
+    set({ mode: "live", telemetry: null, display: null, frame: null });
+  },
+
+  seekReplay: (index) => {
+    const run = replayRun;
+    if (!run || run.frames.length === 0) return;
+    const i = Math.max(0, Math.min(run.frames.length - 1, Math.round(index)));
+    const frame = run.frames[i];
+
+    // Only what had happened by this point, so scrubbing reads forward through
+    // the race rather than showing its ending from the first frame.
+    // Newest first, matching what the live feed gives these panels.
+    const laps = run.laps.filter((l) => l.lap < frame.lap).slice().reverse();
+    const alerts = run.alerts.filter((a) => a.createdAt <= frame.t).slice().reverse();
+
+    const targetLapTimeS = run.targetLapTimeS;
+
+    const telemetry: Telemetry = {
+      ...fromFrame(frame, {
+        fuelTargetPerLapKg: run.fuelTargetPerLapKg,
+        fuelStartKg: run.fuelStartKg,
+        // The archive keeps no per-lap SOC, so the sparkline shows its own
+        // "builds after the first lap" message rather than a fabricated line.
+        socHistory: [],
+      }),
+      seq: i,
+      status: "live",
+      totalLaps: run.totalLaps,
+      lastLapS: laps[0]?.total ?? 0,
+      deltaToTargetS: laps[0] ? laps[0].total - targetLapTimeS : 0,
+      strategy: {
+        // A recording carries no strategy state: the plan, pit window and
+        // confidence were live agent output that was never stored. Zeroed
+        // rather than invented, and the panel labels them as unavailable.
+        plan: "Recorded run · no stored strategy",
+        stintLap: frame.tyres.age_laps,
+        stintLength: run.totalLaps,
+        pitWindow: [0, 0],
+        confidencePct: 0,
+        deltaVsAltS: 0,
+        targetLapTimeS,
+      },
+      laps,
+      alerts,
+      agentMessages: [],
+    };
+
+    // No smoothing on a recording: the stored frames are already the canonical
+    // values, and the filter is tuned for a 10 Hz live feed rather than a
+    // scrubber that can jump anywhere in the race.
+    set({ frame, telemetry, display: telemetry, replayIndex: i });
+  },
 }));
 
 /**
@@ -134,6 +264,8 @@ function isDiscontinuity(prev: Telemetry, next: Telemetry): boolean {
 /** Folds one server message into store state. */
 function apply(message: ServerMessage) {
   const store = useRaceStore.getState();
+  // A frame arriving from the server would otherwise stomp the playhead.
+  if (store.mode === "replay") return;
 
   switch (message.type) {
     case "snapshot": {
