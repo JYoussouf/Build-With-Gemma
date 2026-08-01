@@ -39,7 +39,9 @@ export function ChannelPicker({
   const atLimit = selected.length >= MAX_SERIES;
 
   return (
-    <div className="flex min-h-0 flex-col">
+    // h-full is what makes the list below scroll rather than the page: without
+    // a height bound the inner overflow container just grows to fit.
+    <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0 border-b border-pit-border p-2">
         <input
           value={filter}

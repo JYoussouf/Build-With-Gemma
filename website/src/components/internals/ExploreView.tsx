@@ -103,7 +103,7 @@ export function ExploreView() {
       />
 
       <div className="flex min-h-0 flex-1">
-        <aside className="w-60 shrink-0 border-r border-pit-border">
+        <aside className="flex w-60 shrink-0 flex-col overflow-hidden border-r border-pit-border">
           <ChannelPicker
             selected={selected}
             onToggle={toggle}

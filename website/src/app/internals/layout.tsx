@@ -15,7 +15,9 @@ const TABS = [
 
 export default function InternalsLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-dvh min-h-0 flex-col">
+    // The section is an app shell: it fills the viewport and never scrolls as
+    // a whole. Panels inside scroll on their own so the chart stays put.
+    <div className="flex h-dvh min-h-0 flex-col overflow-hidden">
       <header className="flex shrink-0 items-center justify-between border-b border-pit-border px-4 py-2.5">
         <div className="flex items-baseline gap-4">
           <Link
