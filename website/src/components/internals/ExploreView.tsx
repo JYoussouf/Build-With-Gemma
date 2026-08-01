@@ -12,7 +12,7 @@ import {
   useLiveSource,
   useReplaySource,
 } from "@/lib/explore/source";
-import { windowFrames, WINDOWS } from "@/lib/explore/series";
+import { ScaleMode, windowFrames, WINDOWS } from "@/lib/explore/series";
 import { useRaceClock, useRaceStore } from "@/lib/store";
 import { getTrack, TRACK_KEYS } from "@/lib/track";
 
@@ -29,6 +29,7 @@ export function ExploreView() {
   const [replayTrack, setReplayTrack] = useState(TRACK_KEYS[0]);
   const [selected, setSelected] = useState<string[]>(DEFAULT_SELECTION);
   const [windowIndex, setWindowIndex] = useState(0);
+  const [scale, setScale] = useState<ScaleMode>("auto");
   const [hover, setHover] = useState<number | null>(null);
 
   const liveTrack = useRaceStore((s) => s.trackKey);
@@ -96,6 +97,8 @@ export function ExploreView() {
         setTrackKey={setTrackKey}
         windowIndex={windowIndex}
         setWindowIndex={setWindowIndex}
+        scale={scale}
+        setScale={setScale}
         source={source}
       />
 
@@ -124,6 +127,7 @@ export function ExploreView() {
                 series={series}
                 cursor={hover}
                 onCursor={setHover}
+                scale={scale}
               />
             )}
           </div>
@@ -144,6 +148,8 @@ function Controls({
   setTrackKey,
   windowIndex,
   setWindowIndex,
+  scale,
+  setScale,
   source,
 }: {
   kind: "live" | "replay";
@@ -154,6 +160,8 @@ function Controls({
   setTrackKey: (k: string) => void;
   windowIndex: number;
   setWindowIndex: (i: number) => void;
+  scale: ScaleMode;
+  setScale: (s: ScaleMode) => void;
   source: FrameSource;
 }) {
   return (
@@ -201,6 +209,16 @@ function Controls({
         value={String(windowIndex)}
         onChange={(v) => setWindowIndex(Number(v))}
         options={WINDOWS.map((w, i) => ({ value: String(i), label: w.label }))}
+      />
+
+      <Select
+        label="Scale"
+        value={scale}
+        onChange={(v) => setScale(v as ScaleMode)}
+        options={[
+          { value: "auto", label: "Fit window" },
+          { value: "limits", label: "Car limits" },
+        ]}
       />
 
       <button

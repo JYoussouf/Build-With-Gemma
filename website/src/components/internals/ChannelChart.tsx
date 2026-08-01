@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Channel } from "@/lib/channels";
 import { TelemetryFrame } from "@/lib/frame";
-import { formatValue, plotSeries } from "@/lib/explore/series";
+import { formatValue, plotSeries, ScaleMode } from "@/lib/explore/series";
 
 interface ChannelChartProps {
   frames: TelemetryFrame[];
@@ -11,16 +11,21 @@ interface ChannelChartProps {
   /** Index into `frames`, or null to follow the newest frame. */
   cursor: number | null;
   onCursor: (index: number | null) => void;
+  scale: ScaleMode;
 }
 
 /** Horizontal gridlines, as fractions of the plot height. */
 const GRID = [0, 0.25, 0.5, 0.75, 1];
+
+/** Vertical breathing room, so a series at its extreme is not cut by the edge. */
+const PAD = 6;
 
 export function ChannelChart({
   frames,
   series,
   cursor,
   onCursor,
+  scale,
 }: ChannelChartProps) {
   const container = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -44,10 +49,19 @@ export function ChannelChart({
     () =>
       width > 0 && height > 0
         ? series.map((s) =>
-            plotSeries(frames, s.channel, s.colour, width, height, cursor),
+            plotSeries({
+              frames,
+              channel: s.channel,
+              colour: s.colour,
+              width,
+              height,
+              cursor,
+              scale,
+              pad: PAD,
+            }),
           )
         : [],
-    [frames, series, width, height, cursor],
+    [frames, series, width, height, cursor, scale],
   );
 
   const indexFromEvent = useCallback(
@@ -120,15 +134,13 @@ export function ChannelChart({
                 strokeWidth={1}
               />
               {plotted.map((s) => {
-                const span = s.domain[1] - s.domain[0] || 1;
                 const value = s.current;
                 if (value === null) return null;
-                const y = height - ((value - s.domain[0]) / span) * height;
                 return (
                   <circle
                     key={s.channel.id}
                     cx={cursorX}
-                    cy={y}
+                    cy={s.toY(value)}
                     r={3}
                     fill="var(--color-pit-black)"
                     stroke={s.colour}
@@ -169,7 +181,14 @@ export function ChannelChart({
       {plotted.length > 0 && (
         <ul className="flex shrink-0 flex-wrap gap-x-4 gap-y-1 px-1 pt-2">
           {plotted.map((s) => (
-            <li key={s.channel.id} className="flex items-baseline gap-1.5">
+            <li
+              key={s.channel.id}
+              className="flex items-baseline gap-1.5"
+              title={`${s.channel.id} · axis ${formatValue(
+                s.channel,
+                s.domain[0],
+              )} to ${formatValue(s.channel, s.domain[1])} ${s.channel.unit}`}
+            >
               <span
                 className="inline-block h-2 w-2 shrink-0 rounded-[1px]"
                 style={{ backgroundColor: s.colour }}
@@ -181,6 +200,10 @@ export function ChannelChart({
                 {formatValue(s.channel, s.current)}
               </span>
               <span className="text-[10px] text-ink-muted">{s.channel.unit}</span>
+              <span className="tnum text-[10px] text-ink-muted/70">
+                [{formatValue(s.channel, s.domain[0])} to{" "}
+                {formatValue(s.channel, s.domain[1])}]
+              </span>
             </li>
           ))}
         </ul>

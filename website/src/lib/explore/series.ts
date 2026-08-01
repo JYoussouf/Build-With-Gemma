@@ -73,12 +73,27 @@ export function decimate(values: number[]): { value: number; index: number }[] {
 }
 
 /**
- * Vertical range for a channel. A fixed domain is used where the channel has
- * one; otherwise the range present in the window, padded so a flat line does
- * not sit exactly on an edge.
+ * How a series is scaled vertically.
+ *
+ * `auto` fits the window, which is what makes a channel legible when it only
+ * moves through a sliver of its configured range: tyre wear crossing 0.2% is a
+ * flat line on a 0-100 axis and a visible curve when fitted.
+ *
+ * `limits` uses the range from data/config/vehicle.json, which answers a
+ * different question: how close is this to what the car can do.
  */
-export function domainFor(channel: Channel, values: number[]): [number, number] {
-  if (channel.domain) return channel.domain;
+export type ScaleMode = "auto" | "limits";
+
+/**
+ * Vertical range for a channel: its configured limits, or the range present in
+ * the window padded so a flat line does not sit exactly on an edge.
+ */
+export function domainFor(
+  channel: Channel,
+  values: number[],
+  mode: ScaleMode = "auto",
+): [number, number] {
+  if (mode === "limits" && channel.domain) return channel.domain;
   if (values.length === 0) return [0, 1];
 
   let lo = Infinity;
@@ -87,9 +102,19 @@ export function domainFor(channel: Channel, values: number[]): [number, number] 
     if (v < lo) lo = v;
     if (v > hi) hi = v;
   }
-  if (lo === hi) return [lo - 1, hi + 1];
+  if (lo === hi) return clamp(channel, [lo - 1, hi + 1]);
   const pad = (hi - lo) * 0.08;
-  return [lo - pad, hi + pad];
+  return clamp(channel, [lo - pad, hi + pad]);
+}
+
+/**
+ * Keeps the fitted range inside what the channel can physically read, so a
+ * throttle trace never claims an axis running from -8% to 108%.
+ */
+function clamp(channel: Channel, [lo, hi]: [number, number]): [number, number] {
+  if (!channel.domain) return [lo, hi];
+  const [min, max] = channel.domain;
+  return [Math.max(min, lo), Math.min(max, hi)];
 }
 
 export interface PlottedSeries {
@@ -99,6 +124,23 @@ export interface PlottedSeries {
   domain: [number, number];
   /** Value at the cursor, for the legend. */
   current: number | null;
+  /** Maps a value to its y in the same pixel space as `points`. */
+  toY: (value: number) => number;
+}
+
+export interface PlotOptions {
+  frames: TelemetryFrame[];
+  channel: Channel;
+  colour: string;
+  width: number;
+  height: number;
+  cursor: number | null;
+  scale: ScaleMode;
+  /**
+   * Vertical inset, in pixels. Without it a channel sitting at either end of
+   * its range is drawn exactly on the plot edge and reads as clipped.
+   */
+  pad: number;
 }
 
 /**
@@ -108,24 +150,27 @@ export interface PlottedSeries {
  * thousands cannot share a value axis usefully, so the legend carries the
  * numbers and the chart carries the shape.
  */
-export function plotSeries(
-  frames: TelemetryFrame[],
-  channel: Channel,
-  colour: string,
-  width: number,
-  height: number,
-  cursor: number | null,
-): PlottedSeries {
+export function plotSeries({
+  frames,
+  channel,
+  colour,
+  width,
+  height,
+  cursor,
+  scale,
+  pad,
+}: PlotOptions): PlottedSeries {
   const values = frames.map((f) => channel.get(f));
-  const domain = domainFor(channel, values);
+  const domain = domainFor(channel, values, scale);
   const span = domain[1] - domain[0] || 1;
   const sampled = decimate(values);
   const lastIndex = Math.max(1, values.length - 1);
+  const plotHeight = Math.max(1, height - pad * 2);
 
   const points = sampled
     .map(({ value, index }) => {
       const x = (index / lastIndex) * width;
-      const y = height - ((value - domain[0]) / span) * height;
+      const y = pad + plotHeight - ((value - domain[0]) / span) * plotHeight;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(" ");
@@ -135,7 +180,14 @@ export function plotSeries(
       ? values[cursor]
       : (values[values.length - 1] ?? null);
 
-  return { channel, colour, points, domain, current };
+  return {
+    channel,
+    colour,
+    points,
+    domain,
+    current,
+    toY: (value) => pad + plotHeight - ((value - domain[0]) / span) * plotHeight,
+  };
 }
 
 /** Formats a channel value for a readout, at a sensible precision. */

@@ -124,9 +124,19 @@ Hand-rolled SVG in the same idiom as the existing sparkline in `website/src/comp
 No charting dependency is added.
 
 The series share one time axis.
-Each series is normalised to its own domain, because the units differ too widely to share a value axis: fuel in kilograms and rpm in thousands cannot share a scale usefully.
+Each series is scaled to its own vertical range, because the units differ too widely to share a value axis: fuel in kilograms and rpm in thousands cannot share a scale usefully.
 The legend therefore carries each series' actual value and unit, which is where the numbers are read.
 Hovering shows a crosshair and moves the cursor, so the legend and the raw frame below both describe the hovered moment.
+
+A Scale control chooses what that vertical range means, because the two useful readings are different questions:
+
+- **Fit window** (default) fits the range present in the window.
+  Without it a channel that moves through a sliver of its configured range is an unreadable flat line: tyre wear crossing 0.2% is invisible on a 0-100 axis and a legible curve when fitted.
+  The fitted range is clamped to the channel's configured bounds, so a throttle trace never claims an axis running from -8% to 108%.
+- **Car limits** uses the range from `data/config/vehicle.json`, which answers instead how close the car is to what it can do.
+
+The legend prints each series' current axis range, so a fitted line is never a mystery about what it is scaled to.
+The plot is inset vertically by a few pixels, so a channel sitting at either end of its range is drawn fully rather than reading as clipped by the frame.
 
 **Raw frame.**
 A collapsible pretty-printed JSON dump of the frame at the cursor.
