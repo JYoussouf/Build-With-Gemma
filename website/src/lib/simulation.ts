@@ -47,6 +47,13 @@ const MAX_ALERT_HISTORY = 400;
 const TYRE_INERTIA = 0.3;
 /** Road-wheel angle to steering-wheel angle. */
 const STEERING_RATIO = 4.2;
+/**
+ * Pedal travel rates, in percent per second. A driver takes roughly a quarter
+ * of a second to go from closed to full throttle and is quicker onto the
+ * brake, so transitions are ramps rather than steps.
+ */
+const THROTTLE_RATE = 400;
+const BRAKE_RATE = 650;
 
 const MAX_LAT_G = vehicle.limits.max_lateral_g;
 const V_MAX_KMH = vehicle.limits.max_speed_kmh;
@@ -205,11 +212,25 @@ function clamp(v: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, v));
 }
 
+/** Moves `from` towards `to` by at most `step`. */
+function approach(from: number, to: number, step: number) {
+  if (to > from) return Math.min(to, from + step);
+  return Math.max(to, from - step);
+}
+
+/**
+ * The fastest this corner can be taken on the available grip.
+ *
+ * Deliberately not floored by the demo's minimum speed: this is the physical
+ * limit, and it is what bounds that floor at the call site. Flooring here
+ * instead made the floor unbounded, which drove a 3.4 m radius hairpin
+ * through the corner at 74 km/h and reported it as 12.75 g.
+ */
 function corneringSpeedKmh(curvature: number): number {
   const k = Math.abs(curvature);
   if (k < 1e-4) return V_MAX_KMH;
   const vMs = Math.sqrt((MAX_LAT_G * G) / k);
-  return clamp(vMs * 3.6, V_MIN_KMH, V_MAX_KMH);
+  return Math.min(vMs * 3.6, V_MAX_KMH);
 }
 
 function gearFor(speedKmh: number): number {
@@ -246,20 +267,32 @@ export function step(sim: SimState, dt: number): SimState {
   const vAhead =
     corneringSpeedKmh(curvatureAhead(track, t.trackPos, LOOKAHEAD_M)) / 3.6;
 
-  const braking = vNow > vAhead + 0.5;
+  // Brake for whichever bites first: the corner ahead, or the one already
+  // being taken. Looking only ahead let the car sit above the grip limit all
+  // the way through a corner it had entered too fast, with the brake at 0%.
+  const vLimit = Math.min(vCorner, vAhead);
+  const braking = vNow > vLimit + 0.5;
   const headroom = clamp((vCorner - vNow) / Math.max(vCorner, 1), 0, 1);
 
   let accel: number;
   if (braking) {
     // Brake proportionally to how much speed has to come off before the corner.
-    const overspeed = (vNow - vAhead) / Math.max(vNow, 1);
+    const overspeed = (vNow - vLimit) / Math.max(vNow, 1);
     accel = -MAX_DECEL * clamp(overspeed * 3.2, 0.15, 1);
   } else {
     // Power-limited at high speed: less acceleration available the faster you go.
     accel = MAX_ACCEL * headroom * (1 - 0.55 * (vNow / (V_MAX_KMH / 3.6)));
   }
 
-  const vNext = clamp(vNow + accel * dt, V_MIN_KMH / 3.6, V_MAX_KMH / 3.6);
+  // The speed floor keeps the demo lively on slow sections, but it is a
+  // presentation choice and must not overrule physics. Two things bound it:
+  //
+  //  - grip: forcing the car through a 3.4 m radius hairpin at the floor
+  //    would read as 12.75 g, so the floor never exceeds the corner speed
+  //  - inertia: from a standstill the floor would otherwise teleport the car
+  //    to 74 km/h in one frame, which reads as 21 g off the line
+  const floorMs = Math.min(V_MIN_KMH / 3.6, vCorner, vNow + MAX_ACCEL * dt);
+  const vNext = clamp(vNow + accel * dt, floorMs, V_MAX_KMH / 3.6);
   const speedKmh = vNext * 3.6;
   const longitudinalG = ((vNext - vNow) / dt) / G;
   const lateralG = (vNext * vNext * here.curvature) / G;
@@ -267,8 +300,15 @@ export function step(sim: SimState, dt: number): SimState {
   // Pedal position reflects driver *demand*, not achieved acceleration. Flat
   // out on a drag-limited straight is 100% throttle even though the car is
   // barely gaining speed; mid-corner is maintenance throttle.
-  const throttlePct = braking ? 0 : clamp(35 + headroom * 250, 0, 100);
-  const brakePct = clamp(longitudinalG < 0 ? -longitudinalG * 26 : 0, 0, 100);
+  //
+  // Demand is then rate-limited, because a pedal is a physical thing: a real
+  // trace ramps between closed and open over a couple of tenths. Applying
+  // demand directly made throttle a square wave that sat at exactly 0 or 100
+  // for 91% of the race.
+  const throttleTarget = braking ? 0 : clamp(30 + headroom * 95, 0, 100);
+  const brakeTarget = clamp(longitudinalG < 0 ? -longitudinalG * 26 : 0, 0, 100);
+  const throttlePct = approach(t.throttlePct, throttleTarget, THROTTLE_RATE * dt);
+  const brakePct = approach(t.brakePct, brakeTarget, BRAKE_RATE * dt);
   const steeringDeg =
     ((Math.atan(here.curvature * 3.6) * 180) / Math.PI) * STEERING_RATIO;
 
@@ -648,4 +688,65 @@ function maybeSpeak(t: Telemetry, sc: SimScratch) {
     },
     ...t.agentMessages,
   ].slice(0, 20);
+}
+
+// ---------------------------------------------------------------------------
+// Engineer and driver actions.
+//
+// These used to live in the browser store, which meant each tab applied them
+// to its own copy of the race. They belong here so the server can apply them
+// once, authoritatively, and broadcast the result to every client.
+// ---------------------------------------------------------------------------
+
+/** Engineer approves a pending 2c anomaly, optionally rewording it. */
+export function applyApprove(
+  sim: SimState,
+  id: string,
+  message?: string,
+): SimState {
+  const telemetry: Telemetry = {
+    ...sim.telemetry,
+    alerts: sim.telemetry.alerts.map((a) =>
+      a.id === id ? { ...a, status: "sent", message: message ?? a.message } : a,
+    ),
+  };
+  return { ...sim, telemetry };
+}
+
+/** Engineer dismisses a pending 2c anomaly as a false positive. */
+export function applyDismiss(sim: SimState, id: string): SimState {
+  const telemetry: Telemetry = {
+    ...sim.telemetry,
+    alerts: sim.telemetry.alerts.map((a) =>
+      a.id === id ? { ...a, status: "dismissed" } : a,
+    ),
+  };
+  return { ...sim, telemetry };
+}
+
+/** Pit stop: fresh rubber, stint counter reset, and a word from Gemma. */
+export function applyPit(sim: SimState, compound: Compound): SimState {
+  const t = sim.telemetry;
+  const telemetry: Telemetry = {
+    ...t,
+    tyres: {
+      ...t.tyres,
+      compound,
+      wearPct: 0,
+      gripLevel: 1,
+      ageLaps: 0,
+      temps: { fl: 78, fr: 80, rl: 76, rr: 77 },
+    },
+    strategy: { ...t.strategy, stintLap: 0 },
+    agentMessages: [
+      {
+        id: `gemma-pit-${t.lap}-${sim.scratch.clock.toFixed(0)}`,
+        lap: t.lap,
+        text: `Box confirmed. ${compound.toUpperCase()} fitted on lap ${t.lap}. Two laps to build temperature — push T1 to T4.`,
+        createdAt: sim.scratch.clock,
+      },
+      ...t.agentMessages,
+    ].slice(0, 20),
+  };
+  return { ...sim, telemetry };
 }
