@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { AppTabs } from "@/components/AppTabs";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,7 +17,12 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      {/* The tab bar is a fixed band and the view below it owns the rest of
+          the viewport, so each view can still manage its own scrolling. */}
+      <body className="flex h-dvh min-h-0 flex-col antialiased">
+        <AppTabs />
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+      </body>
     </html>
   );
 }

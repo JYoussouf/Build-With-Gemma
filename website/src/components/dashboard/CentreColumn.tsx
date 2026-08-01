@@ -3,24 +3,37 @@
 import { Panel } from "@/components/ui/Panel";
 import { Bar, LabeledBar, Metric, StatusDot } from "@/components/ui/Readouts";
 import { levelFor, signed } from "@/lib/format";
-import { useRaceStore, useTelemetry } from "@/lib/store";
+import { useRaceStore, useSnapshot } from "@/lib/store";
 import { Corners } from "@/lib/types";
 
+/**
+ * Middle column. Laid out as fixed rows rather than a scrolling stack: the
+ * stack put Brakes below the fold, where the timing tower cut it off
+ * (feedback/round-01 D3). Energy and Brakes now share a row — both are compact
+ * four-corner readouts — so every panel here has a slot that is always fully
+ * visible, and only Strategy's message feed scrolls.
+ */
 export function CentreColumn() {
-  // pb-12 keeps the last panel clear of the collapsed history bar, which
-  // floats at the bottom of this column.
   return (
-    <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1 pb-12">
+    // Every panel keeps its natural height and the column scrolls when they
+    // do not all fit. Giving Strategy the leftover row instead meant that on a
+    // 900 px viewport it got 24 px for 242 px of content and vanished, and
+    // capping it just moved the squeeze onto Speed & Inputs. A column this
+    // over-subscribed has to scroll; what it must not do is silently crush a
+    // panel to nothing.
+    <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
       <SpeedAndInputs />
-      <ErsPanel />
-      <BrakePanel />
+      <div className="grid shrink-0 gap-3 lg:grid-cols-2">
+        <ErsPanel />
+        <BrakePanel />
+      </div>
       <StrategyPanel />
     </div>
   );
 }
 
 function SpeedAndInputs() {
-  const t = useTelemetry((t) => t);
+  const t = useSnapshot((f) => f);
 
   return (
     <Panel title="Speed & Inputs" className="shrink-0">
@@ -31,7 +44,7 @@ function SpeedAndInputs() {
             <span className="ml-1 text-[12px] text-ink-secondary">km/h</span>
           </div>
           <div className="tnum mt-1 text-[11px] text-ink-secondary">
-            {t.rpm.toLocaleString("en-US")} rpm
+            {Math.round(t.rpm).toLocaleString("en-US")} rpm
           </div>
         </div>
         <div className="flex size-14 items-center justify-center rounded border border-pit-border bg-pit-panel-2">
@@ -89,13 +102,12 @@ function SteeringTrace({ deg }: { deg: number }) {
 }
 
 function ErsPanel() {
-  const ers = useTelemetry((t) => t.ers);
+  const ers = useSnapshot((f) => f.ers);
   const socLevel = ers.socPct < 12 ? "crit" : ers.socPct < 30 ? "warn" : "ok";
 
   return (
     <Panel
       title="Energy (ERS)"
-      className="shrink-0"
       action={
         <span className="text-[11px] tracking-[0.1em] text-ink uppercase">{ers.mode}</span>
       }
@@ -166,11 +178,11 @@ function SocSparkline({ history, current }: { history: number[]; current: number
 }
 
 function BrakePanel() {
-  const brakes = useTelemetry((t) => t.brakes);
+  const brakes = useSnapshot((f) => f.brakes);
   const keys: (keyof Corners)[] = ["fl", "fr", "rl", "rr"];
 
   return (
-    <Panel title="Brakes" className="shrink-0">
+    <Panel title="Brakes">
       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
         {keys.map((k) => {
           const temp = brakes.temps[k];
@@ -204,13 +216,17 @@ function BrakePanel() {
 }
 
 function StrategyPanel() {
-  const t = useTelemetry((t) => t);
+  const t = useSnapshot((f) => f);
   const pitStop = useRaceStore((s) => s.pitStop);
   const s = t.strategy;
   const inWindow = t.lap >= s.pitWindow[0] && t.lap <= s.pitWindow[1];
 
   return (
-    <Panel title="Strategy" className="shrink-0">
+    <Panel
+      title="Strategy"
+      className="shrink-0"
+      bodyClassName="flex min-h-0 flex-col overflow-y-auto"
+    >
       <div className="text-[13px] text-ink">{s.plan}</div>
       <div className="mt-2 grid grid-cols-2 gap-x-4">
         <Metric label="Stint lap" value={`${t.tyres.ageLaps} of ${s.stintLength}`} />
@@ -244,7 +260,7 @@ function StrategyPanel() {
 }
 
 function GemmaFeed() {
-  const messages = useTelemetry((t) => t.agentMessages);
+  const messages = useSnapshot((f) => f.agentMessages);
   return (
     <div className="mt-3 rounded border border-pit-border bg-pit-panel-2">
       <div className="border-b border-pit-border px-2.5 py-1.5 text-[10px] tracking-[0.14em] text-ink-secondary uppercase">

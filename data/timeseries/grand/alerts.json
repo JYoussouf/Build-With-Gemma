@@ -27,7 +27,7 @@
     "severity": "medium",
     "lap": 2,
     "title": "ERS harvest decline",
-    "message": "Harvest 2.4 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 2.5 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
     "created_at": 64.2
   },
@@ -39,7 +39,7 @@
     "title": "Tyre asymmetry",
     "message": "Front axle split 15°C. Left front working harder than the right.",
     "status": "sent",
-    "created_at": 102.7
+    "created_at": 102.8
   },
   {
     "id": "alert-5",
@@ -65,7 +65,7 @@
     "severity": "low",
     "lap": 5,
     "title": "Brake temp check",
-    "message": "Brakes 655° front, 412° rear. In window.",
+    "message": "Brakes 660° front, 415° rear. In window.",
     "status": "sent",
     "created_at": 252.6
   },
@@ -115,7 +115,7 @@
     "severity": "medium",
     "lap": 8,
     "title": "ERS harvest decline",
-    "message": "Harvest 3.1 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 2.7 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
     "created_at": 441
   },
@@ -157,7 +157,7 @@
     "severity": "low",
     "lap": 10,
     "title": "Brake temp check",
-    "message": "Brakes 655° front, 411° rear. In window.",
+    "message": "Brakes 656° front, 413° rear. In window.",
     "status": "sent",
     "created_at": 566.6
   },
@@ -207,7 +207,7 @@
     "severity": "medium",
     "lap": 14,
     "title": "ERS harvest decline",
-    "message": "Harvest 3.1 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 2.7 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
     "created_at": 817.8
   },
@@ -219,7 +219,7 @@
     "title": "Tyre asymmetry",
     "message": "Front axle split 15°C. Left front working harder than the right.",
     "status": "sent",
-    "created_at": 856.3
+    "created_at": 856.4
   },
   {
     "id": "alert-20",
@@ -245,7 +245,7 @@
     "severity": "low",
     "lap": 15,
     "title": "Brake temp check",
-    "message": "Brakes 654° front, 411° rear. In window.",
+    "message": "Brakes 660° front, 414° rear. In window.",
     "status": "sent",
     "created_at": 880.6
   },
@@ -295,7 +295,7 @@
     "severity": "low",
     "lap": 20,
     "title": "Brake temp check",
-    "message": "Brakes 655° front, 412° rear. In window.",
+    "message": "Brakes 660° front, 415° rear. In window.",
     "status": "sent",
     "created_at": 1194.6
   },
@@ -305,7 +305,7 @@
     "severity": "medium",
     "lap": 20,
     "title": "ERS harvest decline",
-    "message": "Harvest 3.1 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 2.7 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
     "created_at": 1194.6
   },
@@ -365,7 +365,7 @@
     "severity": "low",
     "lap": 25,
     "title": "Brake temp check",
-    "message": "Brakes 655° front, 412° rear. In window.",
+    "message": "Brakes 660° front, 415° rear. In window.",
     "status": "sent",
     "created_at": 1508.6
   },
@@ -397,7 +397,7 @@
     "severity": "medium",
     "lap": 26,
     "title": "ERS harvest decline",
-    "message": "Harvest 3.1 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 2.7 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
     "created_at": 1571.4
   },
@@ -427,7 +427,7 @@
     "title": "Tyre asymmetry",
     "message": "Front axle split 15°C. Left front working harder than the right.",
     "status": "sent",
-    "created_at": 1609.9
+    "created_at": 1610
   },
   {
     "id": "alert-39",
@@ -457,7 +457,7 @@
     "severity": "low",
     "lap": 30,
     "title": "Brake temp check",
-    "message": "Brakes 654° front, 411° rear. In window.",
+    "message": "Brakes 656° front, 412° rear. In window.",
     "status": "sent",
     "created_at": 1822.6
   },
@@ -485,7 +485,7 @@
     "severity": "medium",
     "lap": 32,
     "title": "ERS harvest decline",
-    "message": "Harvest 3.1 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 2.7 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
     "created_at": 1948.2
   },
@@ -545,7 +545,7 @@
     "severity": "low",
     "lap": 35,
     "title": "Brake temp check",
-    "message": "Brakes 654° front, 411° rear. In window.",
+    "message": "Brakes 660° front, 414° rear. In window.",
     "status": "sent",
     "created_at": 2136.6
   },
@@ -577,7 +577,7 @@
     "severity": "medium",
     "lap": 38,
     "title": "ERS harvest decline",
-    "message": "Harvest 3.1 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 2.7 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
     "created_at": 2325
   },
@@ -607,7 +607,7 @@
     "title": "Tyre asymmetry",
     "message": "Front axle split 15°C. Left front working harder than the right.",
     "status": "sent",
-    "created_at": 2363.5
+    "created_at": 2363.6
   },
   {
     "id": "alert-55",
@@ -615,7 +615,7 @@
     "severity": "low",
     "lap": 40,
     "title": "Brake temp check",
-    "message": "Brakes 655° front, 412° rear. In window.",
+    "message": "Brakes 660° front, 415° rear. In window.",
     "status": "sent",
     "created_at": 2450.6
   },
@@ -687,7 +687,7 @@
     "severity": "medium",
     "lap": 44,
     "title": "ERS harvest decline",
-    "message": "Harvest 3.1 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 2.7 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
     "created_at": 2701.8
   },
@@ -707,7 +707,7 @@
     "severity": "low",
     "lap": 45,
     "title": "Brake temp check",
-    "message": "Brakes 655° front, 412° rear. In window.",
+    "message": "Brakes 659° front, 414° rear. In window.",
     "status": "sent",
     "created_at": 2764.6
   },
@@ -775,7 +775,7 @@
     "severity": "low",
     "lap": 50,
     "title": "Brake temp check",
-    "message": "Brakes 654° front, 411° rear. In window.",
+    "message": "Brakes 656° front, 412° rear. In window.",
     "status": "sent",
     "created_at": 3078.6
   },
@@ -785,7 +785,7 @@
     "severity": "medium",
     "lap": 50,
     "title": "ERS harvest decline",
-    "message": "Harvest 3.1 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 2.7 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
     "created_at": 3078.6
   },
@@ -797,7 +797,7 @@
     "title": "Tyre asymmetry",
     "message": "Front axle split 15°C. Left front working harder than the right.",
     "status": "sent",
-    "created_at": 3117.1
+    "created_at": 3117.2
   },
   {
     "id": "alert-72",
@@ -845,7 +845,7 @@
     "severity": "low",
     "lap": 55,
     "title": "Brake temp check",
-    "message": "Brakes 655° front, 411° rear. In window.",
+    "message": "Brakes 660° front, 415° rear. In window.",
     "status": "sent",
     "created_at": 3392.6
   },
@@ -855,7 +855,7 @@
     "severity": "medium",
     "lap": 56,
     "title": "ERS harvest decline",
-    "message": "Harvest 3.1 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 2.7 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
     "created_at": 3455.4
   },

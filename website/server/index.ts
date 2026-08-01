@@ -79,11 +79,13 @@ const metaOf = (r: Race): RaceMeta => ({
 const liveOf = (r: Race): LiveExtras => {
   const t = r.sim.telemetry;
   return {
+    seq: t.seq,
     status: t.status,
     lastLapS: t.lastLapS,
     deltaToTargetS: t.deltaToTargetS,
     socHistory: t.ers.socHistory,
     fuelTargetPerLapKg: t.fuel.targetPerLapKg,
+    fuelStartKg: t.fuel.startKg,
     strategy: t.strategy,
   };
 };

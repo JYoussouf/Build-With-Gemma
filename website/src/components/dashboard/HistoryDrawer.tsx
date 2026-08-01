@@ -78,7 +78,7 @@ export function HistoryDrawer() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="replay-hatch absolute inset-x-0 bottom-0 z-10 flex items-center gap-3 rounded-md border border-dashed border-pit-border bg-pit-black px-3 py-2 text-left hover:border-ink-secondary"
+        className="replay-hatch flex shrink-0 items-center gap-3 rounded-md border border-dashed border-pit-border bg-pit-black px-3 py-2 text-left hover:border-ink-secondary"
       >
         <span className="text-[11px] tracking-[0.16em] text-ink-secondary uppercase">
           Historical runs
@@ -95,7 +95,7 @@ export function HistoryDrawer() {
 
   return (
     <section
-      className="absolute inset-x-0 bottom-0 z-10 flex h-full flex-col rounded-md border border-dashed border-ink-muted bg-pit-black shadow-[0_-12px_32px_rgba(0,0,0,0.8)]"
+      className="absolute inset-0 z-10 flex flex-col rounded-md border border-dashed border-ink-muted bg-pit-black shadow-[0_-12px_32px_rgba(0,0,0,0.8)]"
       aria-label="Historical runs, recorded archive"
     >
       <Header

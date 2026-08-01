@@ -29,7 +29,6 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import raceDefaults from "../../data/config/race-defaults.json" with { type: "json" };
-import vehicle from "../../data/config/vehicle.json" with { type: "json" };
 import { centerFor, LatLon, r, toFrame, toLatLon } from "../src/lib/frame";
 import { createSimState, SimState, step } from "../src/lib/simulation";
 import { pointAt, TRACK_KEYS, Track } from "../src/lib/track";
@@ -191,10 +190,10 @@ function generateTrack(trackKey: string) {
       decimated_hz: DECIMATED_HZ,
       decimated_frames: decimated.length,
     },
-    starting_fuel_kg: vehicle.fuel.starting_kg,
+    starting_fuel_kg: r(t.fuel.startKg, 2),
     starting_compound: raceDefaults.starting_compound,
     fastest_lap_s: laps.length ? r(Math.min(...laps.map((l) => l.total)), 3) : null,
-    fuel_used_kg: r(vehicle.fuel.starting_kg - t.fuel.remainingKg, 2),
+    fuel_used_kg: r(t.fuel.startKg - t.fuel.remainingKg, 2),
     final_tyre_wear_pct: r(t.tyres.wearPct, 2),
     alerts_by_tier: {
       "2a": alerts.filter((a) => a.tier === "2a").length,

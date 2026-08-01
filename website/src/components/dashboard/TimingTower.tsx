@@ -3,13 +3,13 @@
 import { Panel } from "@/components/ui/Panel";
 import { StatusDot } from "@/components/ui/Readouts";
 import { lapTime, sectorTime, signed } from "@/lib/format";
-import { useTelemetry } from "@/lib/store";
+import { useSnapshot } from "@/lib/store";
 
 export function TimingTower() {
-  const laps = useTelemetry((t) => t.laps);
-  const current = useTelemetry((t) => t.lapTimeS);
-  const lap = useTelemetry((t) => t.lap);
-  const target = useTelemetry((t) => t.strategy.targetLapTimeS);
+  const laps = useSnapshot((f) => f.laps);
+  const current = useSnapshot((f) => f.lapTimeS);
+  const lap = useSnapshot((f) => f.lap);
+  const target = useSnapshot((f) => f.strategy.targetLapTimeS);
   const best = laps.length ? Math.min(...laps.map((l) => l.total)) : 0;
 
   return (

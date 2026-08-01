@@ -25,6 +25,13 @@ export interface TyreState {
 
 export interface FuelState {
   remainingKg: number;
+  /**
+   * What the car started the race with. Sized to the race distance, since
+   * refuelling is banned and this is the entire fuel budget — see
+   * `race-defaults.json` fuel_policy.
+   */
+  startKg: number;
+  /** Tank size. A spec limit, not the load actually carried. */
   capacityKg: number;
   flowRateKgH: number;
   avgPerLapKg: number;
@@ -94,6 +101,13 @@ export interface StrategyState {
 }
 
 export interface Telemetry {
+  /**
+   * Monotonic tick counter. Every field below was produced by this one tick,
+   * so any two values carrying the same `seq` are consistent with each other
+   * (feedback/round-01 D2). Widgets must render from a single snapshot rather
+   * than reading channels independently.
+   */
+  seq: number;
   status: "live" | "paused" | "finished";
   lap: number;
   totalLaps: number;

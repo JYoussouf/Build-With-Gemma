@@ -28,6 +28,7 @@ import {
   LapSummary,
   Severity,
   Telemetry,
+  WeatherState,
 } from "./types";
 import {
   curvatureAhead,
@@ -60,7 +61,16 @@ const V_MAX_KMH = vehicle.limits.max_speed_kmh;
 const V_MIN_KMH = vehicle.limits.min_speed_kmh;
 const MAX_ACCEL = vehicle.limits.max_accel_ms2;
 const MAX_DECEL = vehicle.limits.max_decel_ms2;
-const STARTING_FUEL_KG = vehicle.fuel.starting_kg;
+const MAX_FUEL_FLOW_KG_H = vehicle.fuel.max_flow_kg_h;
+/**
+ * Fuel carried over the race's own requirement, as a fraction.
+ *
+ * With in-race refuelling banned the car starts with everything it will ever
+ * have, so this margin is the entire fuel strategy: it is what "laps of fuel
+ * remaining" runs above "laps left to run", and what lift-and-coast protects
+ * (feedback/round-01 Q1).
+ */
+const FUEL_MARGIN = raceDefaults.targets.fuel_margin_pct / 100;
 const MGU_K_MAX_KW = vehicle.ers.mgu_k_max_kw;
 const DEPLOY_MAX_KW = vehicle.ers.deploy_max_kw;
 const ERS_CAPACITY_KJ = vehicle.ers.capacity_mj * 1000;
@@ -107,7 +117,29 @@ const corners = (v: number): Corners => ({ fl: v, fr: v, rl: v, rr: v });
 
 export function createSimState(trackKey: string = DEFAULT_TRACK_KEY): SimState {
   const track = getTrack(trackKey);
+
+  const seedWeather: WeatherState = {
+    airTempC: SEED_WEATHER.air_temp_c,
+    trackTempC: SEED_WEATHER.track_temp_c,
+    windKmh: SEED_WEATHER.wind_kmh,
+    windDir: SEED_WEATHER.wind_dir,
+    rainMmH: SEED_WEATHER.rain_mm_h,
+    condition: SEED_WEATHER.condition as WeatherState["condition"],
+  };
+  const startingCompound = raceDefaults.starting_compound as Compound;
+
+  // Fuel is loaded for this race on this circuit, not out of a fixed number in
+  // a config file (feedback/round-01 D1). The circuits run from 0.76 km to
+  // 2.92 km, so a fixed load that is a real constraint on one is hundreds of
+  // laps of slack on another — which is exactly what the readout was showing.
+  const lapFuelKg = estimateLapFuelKg(track, seedWeather, startingCompound);
+  const raceFuelKg = Math.min(
+    vehicle.fuel.capacity_kg,
+    lapFuelKg * raceDefaults.total_laps * (1 + FUEL_MARGIN),
+  );
+
   const telemetry: Telemetry = {
+    seq: 0,
     status: "live",
     lap: 1,
     totalLaps: raceDefaults.total_laps,
@@ -125,10 +157,13 @@ export function createSimState(trackKey: string = DEFAULT_TRACK_KEY): SimState {
     lateralG: 0,
     longitudinalG: 0,
     tyres: {
-      compound: raceDefaults.starting_compound as Compound,
+      compound: startingCompound,
       wearPct: 0,
       gripLevel: 1,
-      ageLaps: 0,
+      // Age counts the lap the set is currently running, not the laps it has
+      // finished, so it reads the same as the header's lap number for a set
+      // fitted at the start (feedback/round-01 D2).
+      ageLaps: 1,
       temps: { fl: 82, fr: 84, rl: 79, rr: 80 },
       pressures: {
         fl: vehicle.tyre_pressures_psi.front,
@@ -138,12 +173,13 @@ export function createSimState(trackKey: string = DEFAULT_TRACK_KEY): SimState {
       },
     },
     fuel: {
-      remainingKg: STARTING_FUEL_KG,
+      remainingKg: raceFuelKg,
+      startKg: raceFuelKg,
       capacityKg: vehicle.fuel.capacity_kg,
       flowRateKgH: 0,
-      avgPerLapKg: raceDefaults.targets.fuel_per_lap_kg,
-      targetPerLapKg: raceDefaults.targets.fuel_per_lap_kg,
-      lapsRemaining: raceDefaults.total_laps,
+      avgPerLapKg: lapFuelKg,
+      targetPerLapKg: lapFuelKg,
+      lapsRemaining: Math.floor(raceFuelKg / lapFuelKg),
     },
     ers: {
       socPct: 68,
@@ -154,14 +190,7 @@ export function createSimState(trackKey: string = DEFAULT_TRACK_KEY): SimState {
       socHistory: [],
     },
     brakes: { temps: corners(320), padPct: 100, fade: false },
-    weather: {
-      airTempC: SEED_WEATHER.air_temp_c,
-      trackTempC: SEED_WEATHER.track_temp_c,
-      windKmh: SEED_WEATHER.wind_kmh,
-      windDir: SEED_WEATHER.wind_dir,
-      rainMmH: SEED_WEATHER.rain_mm_h,
-      condition: SEED_WEATHER.condition as Telemetry["weather"]["condition"],
-    },
+    weather: seedWeather,
     strategy: {
       plan: raceDefaults.strategy.plan,
       stintLap: 1,
@@ -194,7 +223,7 @@ export function createSimState(trackKey: string = DEFAULT_TRACK_KEY): SimState {
       seq: 0,
       sectorStart: 0,
       sectorTimes: [0, 0, 0],
-      lapFuelStart: STARTING_FUEL_KG,
+      lapFuelStart: raceFuelKg,
       lapHarvest: 0,
       lapDeploy: 0,
       lastRuleLap: {},
@@ -229,6 +258,144 @@ function corneringSpeedKmh(curvature: number): number {
   return Math.min(vMs * 3.6, V_MAX_KMH);
 }
 
+/**
+ * Instantaneous fuel burn (docs/simulation-models.md 3.1). Shared by the race
+ * loop and by `estimateLapFuelKg`, so the fuel a race is loaded with is
+ * computed by the same model that then burns it.
+ */
+function fuelFlowKgH(
+  speedKmh: number,
+  longitudinalG: number,
+  lateralG: number,
+  weather: WeatherState,
+  compound: Compound,
+): number {
+  const windFactor = 1 + weather.windKmh / 200;
+  const rainFactor = weather.rainMmH > 0 ? 1.15 : 1;
+  return Math.min(
+    MAX_FUEL_FLOW_KG_H,
+    (2.0 +
+      0.0008 * speedKmh * speedKmh +
+      Math.max(0, longitudinalG) * 25 +
+      Math.abs(lateralG) * 5) *
+      windFactor *
+      rainFactor *
+      COMPOUND_FUEL[compound],
+  );
+}
+
+interface Kinematics {
+  speedKmh: number;
+  longitudinalG: number;
+  lateralG: number;
+  /** How much of the corner's speed budget is unused, 0..1. Drives throttle. */
+  headroom: number;
+  braking: boolean;
+}
+
+/**
+ * One tick of the driver model: pick a speed for where the car is and what is
+ * coming, then report the accelerations that speed implies.
+ *
+ * Extracted so `estimateLapFuelKg` drives exactly the car the race does. The
+ * race fuel load is sized from that estimate, so if the two ever diverged the
+ * car would be fuelled for a lap it does not actually drive.
+ *
+ * `headroom` is returned because the pedal model in `step` needs it, and
+ * recomputing it there would be a second place to keep in sync.
+ */
+function drive(track: Track, trackPos: number, speedKmhNow: number, dt: number): Kinematics {
+  const here = pointAt(track, trackPos);
+  const vNow = speedKmhNow / 3.6;
+  const vCorner = corneringSpeedKmh(here.curvature) / 3.6;
+  const vAhead = corneringSpeedKmh(curvatureAhead(track, trackPos, LOOKAHEAD_M)) / 3.6;
+
+  // Brake for whichever bites first: the corner ahead, or the one already
+  // being taken. Looking only ahead let the car sit above the grip limit all
+  // the way through a corner it had entered too fast, with the brake at 0%.
+  const vLimit = Math.min(vCorner, vAhead);
+  const braking = vNow > vLimit + 0.5;
+  const headroom = clamp((vCorner - vNow) / Math.max(vCorner, 1), 0, 1);
+
+  let accel: number;
+  if (braking) {
+    // Brake proportionally to how much speed has to come off before the corner.
+    const overspeed = (vNow - vLimit) / Math.max(vNow, 1);
+    accel = -MAX_DECEL * clamp(overspeed * 3.2, 0.15, 1);
+  } else {
+    // Power-limited at high speed: less acceleration available the faster you go.
+    accel = MAX_ACCEL * headroom * (1 - 0.55 * (vNow / (V_MAX_KMH / 3.6)));
+  }
+
+  // The speed floor keeps the demo lively on slow sections, but it is a
+  // presentation choice and must not overrule physics. Two things bound it:
+  //
+  //  - grip: forcing the car through a 3.4 m radius hairpin at the floor
+  //    would read as 12.75 g, so the floor never exceeds the corner speed
+  //  - inertia: from a standstill the floor would otherwise teleport the car
+  //    to 74 km/h in one frame, which reads as 21 g off the line
+  const floorMs = Math.min(V_MIN_KMH / 3.6, vCorner, vNow + MAX_ACCEL * dt);
+
+  // Grip also caps from above, and this is separate from braking for the
+  // corner ahead. Curvature rises as the car turns in, so `vCorner` keeps
+  // dropping while the car is still shedding speed towards it — for those
+  // ticks the car is already in the corner above the limit, which read as
+  // 5.37 g on the sprint hairpin even with the lookahead braking working.
+  // A real car cannot hold more grip than it has; it understeers instead.
+  const ceilMs = Math.max(floorMs, Math.min(V_MAX_KMH / 3.6, vCorner));
+  const vNext = clamp(vNow + accel * dt, floorMs, ceilMs);
+
+  return {
+    speedKmh: vNext * 3.6,
+    longitudinalG: (vNext - vNow) / dt / G,
+    lateralG: (vNext * vNext * here.curvature) / G,
+    headroom,
+    braking,
+  };
+}
+
+/**
+ * Fuel a single lap costs, by driving one around an empty track.
+ *
+ * This is what the race fuel load is sized from (feedback/round-01 D1). It has
+ * to be measured rather than configured because the circuits differ by a
+ * factor of four in length: a constant that makes fuel a real constraint on
+ * the Grand circuit leaves several hundred laps of margin on the Sprint.
+ *
+ * Deterministic, and cheap — one lap at a 100 ms step is a few hundred
+ * iterations.
+ */
+export function estimateLapFuelKg(
+  track: Track,
+  weather: WeatherState,
+  compound: Compound,
+): number {
+  const dt = 0.1;
+  let trackPos = 0;
+  let speedKmh = V_MIN_KMH;
+  let fuelKg = 0;
+  let guard = 0;
+
+  // Settle first: starting from the pit-lane speed at the start line would
+  // charge the opening corners an acceleration cost a flying lap never pays.
+  for (let warmup = 0; warmup < 2; warmup++) {
+    trackPos = 0;
+    let lapFuel = 0;
+    while (trackPos < 1 && guard++ < 200_000) {
+      const k = drive(track, trackPos, speedKmh, dt);
+      const advanceM = ((speedKmh + k.speedKmh) / 2 / 3.6) * dt;
+      trackPos += advanceM / track.lengthM;
+      speedKmh = k.speedKmh;
+      lapFuel +=
+        (fuelFlowKgH(speedKmh, k.longitudinalG, k.lateralG, weather, compound) * dt) /
+        3600;
+    }
+    fuelKg = lapFuel;
+  }
+
+  return fuelKg;
+}
+
 function gearFor(speedKmh: number): number {
   let gear = 1;
   for (let i = 0; i < GEAR_THRESHOLDS.length; i++) {
@@ -256,42 +423,17 @@ export function step(sim: SimState, dt: number): SimState {
 
   if (t.status !== "live") return sim;
 
-  // ---- Driver model: target speed from curvature, plus corner-entry braking.
+  // ---- Driver model. The whole of it lives in `drive`, so the one-lap fuel
+  // estimate that sizes the race load drives the same car this loop does.
   const here = pointAt(track, t.trackPos);
+  const { speedKmh, longitudinalG, lateralG, headroom, braking } = drive(
+    track,
+    t.trackPos,
+    t.speedKmh,
+    dt,
+  );
   const vNow = t.speedKmh / 3.6;
-  const vCorner = corneringSpeedKmh(here.curvature) / 3.6;
-  const vAhead =
-    corneringSpeedKmh(curvatureAhead(track, t.trackPos, LOOKAHEAD_M)) / 3.6;
-
-  // Brake for whichever bites first: the corner ahead, or the one already
-  // being taken. Looking only ahead let the car sit above the grip limit all
-  // the way through a corner it had entered too fast, with the brake at 0%.
-  const vLimit = Math.min(vCorner, vAhead);
-  const braking = vNow > vLimit + 0.5;
-  const headroom = clamp((vCorner - vNow) / Math.max(vCorner, 1), 0, 1);
-
-  let accel: number;
-  if (braking) {
-    // Brake proportionally to how much speed has to come off before the corner.
-    const overspeed = (vNow - vLimit) / Math.max(vNow, 1);
-    accel = -MAX_DECEL * clamp(overspeed * 3.2, 0.15, 1);
-  } else {
-    // Power-limited at high speed: less acceleration available the faster you go.
-    accel = MAX_ACCEL * headroom * (1 - 0.55 * (vNow / (V_MAX_KMH / 3.6)));
-  }
-
-  // The speed floor keeps the demo lively on slow sections, but it is a
-  // presentation choice and must not overrule physics. Two things bound it:
-  //
-  //  - grip: forcing the car through a 3.4 m radius hairpin at the floor
-  //    would read as 12.75 g, so the floor never exceeds the corner speed
-  //  - inertia: from a standstill the floor would otherwise teleport the car
-  //    to 74 km/h in one frame, which reads as 21 g off the line
-  const floorMs = Math.min(V_MIN_KMH / 3.6, vCorner, vNow + MAX_ACCEL * dt);
-  const vNext = clamp(vNow + accel * dt, floorMs, V_MAX_KMH / 3.6);
-  const speedKmh = vNext * 3.6;
-  const longitudinalG = ((vNext - vNow) / dt) / G;
-  const lateralG = (vNext * vNext * here.curvature) / G;
+  const vNext = speedKmh / 3.6;
 
   // Pedal position reflects driver *demand*, not achieved acceleration. Flat
   // out on a drag-limited straight is 100% throttle even though the car is
@@ -325,18 +467,12 @@ export function step(sim: SimState, dt: number): SimState {
   const sector = sectorFor(track, trackPos);
 
   // ---- Fuel model (docs/tech-stack.md).
-  const windFactor = 1 + t.weather.windKmh / 200;
-  const rainFactor = t.weather.rainMmH > 0 ? 1.15 : 1;
-  const tyreFactor = COMPOUND_FUEL[t.tyres.compound];
-  const flowRateKgH = Math.min(
-    100,
-    (2.0 +
-      0.0008 * speedKmh * speedKmh +
-      Math.max(0, longitudinalG) * 25 +
-      Math.abs(lateralG) * 5) *
-      windFactor *
-      rainFactor *
-      tyreFactor,
+  const flowRateKgH = fuelFlowKgH(
+    speedKmh,
+    longitudinalG,
+    lateralG,
+    t.weather,
+    t.tyres.compound,
   );
   const remainingKg = Math.max(0, t.fuel.remainingKg - (flowRateKgH * dt) / 3600);
 
@@ -420,6 +556,7 @@ export function step(sim: SimState, dt: number): SimState {
 
   const next: Telemetry = {
     ...t,
+    seq: t.seq + 1,
     trackPos,
     sector,
     speedKmh,
@@ -484,11 +621,14 @@ export function step(sim: SimState, dt: number): SimState {
     lap = Math.min(t.totalLaps, lap + 1);
     next.lap = lap;
     next.lapTimeS = 0;
-    next.tyres = { ...next.tyres, ageLaps: t.tyres.ageLaps + 1 };
+    // Age advances with the lap counter, never past it. The final lap clamps
+    // `lap`, so an unconditional increment left the tyres a lap older than the
+    // race they were running (feedback/round-01 D2).
+    if (lap > t.lap) next.tyres = { ...next.tyres, ageLaps: t.tyres.ageLaps + 1 };
     next.fuel = {
       ...next.fuel,
       avgPerLapKg: laps.length
-        ? (STARTING_FUEL_KG - remainingKg) / Math.max(1, lap - 1)
+        ? (t.fuel.startKg - remainingKg) / Math.max(1, lap - 1)
         : lapFuel || t.fuel.avgPerLapKg,
     };
     next.ers = {

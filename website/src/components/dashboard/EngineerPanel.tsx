@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Panel } from "@/components/ui/Panel";
 import { StatusDot } from "@/components/ui/Readouts";
 import { severityLevel } from "@/lib/format";
-import { useRaceStore, useTelemetry } from "@/lib/store";
+import { useRaceStore, useSnapshot } from "@/lib/store";
 import { Alert } from "@/lib/types";
 
 /** Beyond this, the queue is summarised so the rules below stay reachable. */
@@ -23,7 +23,7 @@ export function EngineerPanel() {
 }
 
 function PendingApprovals() {
-  const alerts = useTelemetry((t) => t.alerts);
+  const alerts = useSnapshot((f) => f.alerts);
   const pending = useMemo(
     () => alerts.filter((a) => a.tier === "2c" && a.status === "pending"),
     [alerts],
@@ -155,7 +155,7 @@ const DEFAULT_PATTERNS = [
   { id: "oil-drift", label: "Oil temp drift", detail: "window 5 laps · slope 0.02", on: true },
   { id: "tyre-asym", label: "Tyre asymmetry", detail: "delta > 15°C", on: true },
   { id: "ers-harvest", label: "ERS harvest decline", detail: "min 5.0 MJ", on: true },
-  { id: "fuel-over", label: "Fuel overconsumption", detail: "target 1.72 kg/lap", on: true },
+  { id: "fuel-over", label: "Fuel overconsumption", detail: null, on: true },
 ];
 
 function RulesPanel() {
@@ -201,6 +201,11 @@ function RulesPanel() {
 
 function PatternsPanel() {
   const [patterns, setPatterns] = useState(DEFAULT_PATTERNS);
+  // The fuel target is sized per circuit now, so it cannot be a literal here
+  // without going stale the moment the track changes (feedback D1/D4).
+  const fuelTarget = useSnapshot((f) => f.fuel.targetPerLapKg);
+  const detailFor = (id: string, detail: string | null) =>
+    id === "fuel-over" ? `target ${fuelTarget.toFixed(2)} kg/lap` : detail;
   return (
     <Panel title="Signal patterns (2b)" className="shrink-0">
       <ul className="space-y-1">
@@ -222,7 +227,9 @@ function PatternsPanel() {
               >
                 {p.label}
               </span>
-              <span className="text-[10px] text-ink-muted">{p.detail}</span>
+              <span className="text-[10px] text-ink-muted">
+                {detailFor(p.id, p.detail)}
+              </span>
             </label>
           </li>
         ))}
@@ -238,7 +245,7 @@ const STATUS_LABEL = {
 } as const;
 
 function AlertHistory() {
-  const alerts = useTelemetry((t) => t.alerts);
+  const alerts = useSnapshot((f) => f.alerts);
   return (
     <Panel title="Alert history" className="min-h-[180px] flex-1" bodyClassName="overflow-y-auto">
       {alerts.length === 0 ? (

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "audit:channels": "tsx scripts/audit-channels.ts",
     "build": "next build",
     "build:geometry": "tsx scripts/build-geometry.ts",
     "dev": "next dev",

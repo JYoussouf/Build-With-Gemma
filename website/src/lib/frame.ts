@@ -110,6 +110,7 @@ export function toLatLon(x: number, y: number, center: LatLon): LatLon {
 /** The physics slice of `Telemetry` that a frame can reconstruct. */
 export type FramePhysics = Omit<
   Telemetry,
+  | "seq"
   | "status"
   | "totalLaps"
   | "lastLapS"
@@ -127,6 +128,11 @@ export type FramePhysics = Omit<
  */
 export interface FrameContext {
   fuelTargetPerLapKg: number;
+  /**
+   * What the car started with. Sized to the race distance rather than fixed,
+   * since refuelling is banned — see race-defaults.json fuel_policy.
+   */
+  fuelStartKg: number;
   socHistory: number[];
 }
 
@@ -164,6 +170,7 @@ export function fromFrame(f: TelemetryFrame, ctx: FrameContext): FramePhysics {
     },
     fuel: {
       remainingKg: f.fuel.remaining_kg,
+      startKg: ctx.fuelStartKg,
       capacityKg: vehicle.fuel.capacity_kg,
       flowRateKgH: f.fuel.flow_rate_kg_h,
       avgPerLapKg: f.fuel.avg_per_lap_kg,

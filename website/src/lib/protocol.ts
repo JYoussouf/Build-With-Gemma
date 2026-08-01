@@ -46,12 +46,19 @@ export interface ControlState {
  * enough to ride along with it.
  */
 export interface LiveExtras {
+  /**
+   * The server's tick counter for this frame. Carried through so the client's
+   * display snapshot keeps the single-frame guarantee (feedback/round-01 D2).
+   */
+  seq: number;
   status: Telemetry["status"];
   lastLapS: number;
   deltaToTargetS: number;
   socHistory: number[];
   /** Calibrated off the first flying lap, so it is not a frame field. */
   fuelTargetPerLapKg: number;
+  /** The race's whole fuel load, sized to its distance. Not a frame field. */
+  fuelStartKg: number;
   strategy: StrategyState;
 }
 

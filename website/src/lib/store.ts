@@ -11,16 +11,25 @@ import {
   RaceMeta,
   ServerMessage,
 } from "./protocol";
+import { createSmoothingState, publish } from "./snapshot";
 import { DEFAULT_TRACK_KEY } from "./track";
 import { Compound, Telemetry } from "./types";
 
 /**
  * Client-side race state.
  *
- * This store no longer simulates anything. The server owns the race; this is a
- * projection of what it last sent, and every action is a request rather than a
- * local mutation. That is the whole point: two tabs pointed at one server show
- * one race, where before each tab ran its own simulator and drifted.
+ * This store does not simulate. The server owns the race; this is a projection
+ * of what it last sent, and every action is a request rather than a local
+ * mutation. That is what makes two tabs show one race, where before each tab
+ * ran its own simulator and drifted apart immediately.
+ *
+ * Two layers, per feedback/round-01 D2:
+ *
+ *   telemetry  what the server last sent, unpacked. The source of truth.
+ *   display    one smoothed snapshot per tick, and the only thing widgets read.
+ *
+ * The smoothing in `snapshot.ts` is display-only — it never changes a stored
+ * value, and the frames written to `/data/timeseries` are unaffected.
  */
 
 export type ConnectionState = "connecting" | "open" | "closed";
@@ -33,13 +42,18 @@ const RECONNECT_MAX_MS = 8000;
 
 interface RaceStore {
   connection: ConnectionState;
-  /** Null until the first snapshot arrives. */
+  /** What the server last sent, unpacked. Null until the first snapshot. */
   telemetry: Telemetry | null;
   /**
-   * The most recent frame exactly as it came off the wire. Kept alongside the
-   * unpacked telemetry so consumers that want canonical frames — the explore
-   * view, which also replays them off disk — can take them without
-   * re-deriving.
+   * The one snapshot the dashboard renders (feedback/round-01 D2). Derived
+   * from `telemetry` once per received frame, carrying the same `seq`, so
+   * every widget in a painted frame is looking at the same instant.
+   */
+  display: Telemetry | null;
+  /**
+   * The most recent frame exactly as it came off the wire, unsmoothed. For
+   * consumers that want canonical frames — the explore view, which also
+   * replays them off disk — rather than the display projection.
    */
   frame: TelemetryFrame | null;
   meta: RaceMeta | null;
@@ -56,6 +70,7 @@ interface RaceStore {
 }
 
 let socket: WebSocket | null = null;
+const smoothing = createSmoothingState();
 
 function sendToServer(message: ClientMessage) {
   if (socket?.readyState === WebSocket.OPEN) {
@@ -66,6 +81,7 @@ function sendToServer(message: ClientMessage) {
 export const useRaceStore = create<RaceStore>((set, get) => ({
   connection: "connecting",
   telemetry: null,
+  display: null,
   frame: null,
   meta: null,
   control: { running: true, speedMultiplier: 4 },
@@ -83,20 +99,36 @@ export const useRaceStore = create<RaceStore>((set, get) => ({
 }));
 
 /**
- * Selects from live telemetry.
+ * Reads from the rendered snapshot (feedback/round-01 D2). Every dashboard
+ * widget must go through this rather than touching `telemetry`, so that one
+ * painted frame is one tick.
  *
  * Only valid beneath `<RaceGate>`, which does not render its children until
- * the first snapshot has arrived. Telemetry is never set back to null once it
- * has been received, so within the gate this is always defined — a dropped
- * connection freezes the last frame rather than blanking the screen.
+ * the first snapshot has arrived. `display` is never set back to null once
+ * received, so within the gate this is always defined — a dropped connection
+ * freezes the last frame rather than blanking the screen.
  */
-export function useTelemetry<T>(select: (t: Telemetry) => T): T {
+export function useSnapshot<T>(select: (frame: Telemetry) => T): T {
   return useRaceStore((s) => {
-    if (!s.telemetry) {
-      throw new Error("useTelemetry used outside <RaceGate>");
+    if (!s.display) {
+      throw new Error("useSnapshot used outside <RaceGate>");
     }
-    return select(s.telemetry);
+    return select(s.display);
   });
+}
+
+/**
+ * A step change rather than a trend, so the filter memory is dropped and the
+ * new values appear immediately instead of ramping in: a fresh set of tyres,
+ * a different track, or a race that restarted under us.
+ */
+function isDiscontinuity(prev: Telemetry, next: Telemetry): boolean {
+  // The clock rewound, so this is a different race.
+  if (next.lap < prev.lap) return true;
+  // Fresh rubber: the compound changed, or the stint counter reset.
+  if (next.tyres.compound !== prev.tyres.compound) return true;
+  if (next.tyres.ageLaps < prev.tyres.ageLaps) return true;
+  return false;
 }
 
 /** Folds one server message into store state. */
@@ -106,25 +138,31 @@ function apply(message: ServerMessage) {
   switch (message.type) {
     case "snapshot": {
       const { frame, live, laps, alerts, agentMessages, meta, control } = message;
+      const telemetry: Telemetry = {
+        ...fromFrame(frame, {
+          fuelTargetPerLapKg: live.fuelTargetPerLapKg,
+          fuelStartKg: live.fuelStartKg,
+          socHistory: live.socHistory,
+        }),
+        seq: live.seq,
+        status: live.status,
+        totalLaps: meta.totalLaps,
+        lastLapS: live.lastLapS,
+        deltaToTargetS: live.deltaToTargetS,
+        strategy: live.strategy,
+        laps,
+        alerts,
+        agentMessages,
+      };
+      // A fresh connection has no trend to continue from.
+      smoothing.prev = null;
       useRaceStore.setState({
         meta,
         control,
         trackKey: meta.trackKey,
         frame,
-        telemetry: {
-          ...fromFrame(frame, {
-            fuelTargetPerLapKg: live.fuelTargetPerLapKg,
-            socHistory: live.socHistory,
-          }),
-          status: live.status,
-          totalLaps: meta.totalLaps,
-          lastLapS: live.lastLapS,
-          deltaToTargetS: live.deltaToTargetS,
-          strategy: live.strategy,
-          laps,
-          alerts,
-          agentMessages,
-        },
+        telemetry,
+        display: publish(smoothing, telemetry),
       });
       break;
     }
@@ -135,44 +173,51 @@ function apply(message: ServerMessage) {
       // the snapshot is moments away.
       if (!current) return;
       const { frame, live } = message;
+      const telemetry: Telemetry = {
+        ...current,
+        ...fromFrame(frame, {
+          fuelTargetPerLapKg: live.fuelTargetPerLapKg,
+          fuelStartKg: live.fuelStartKg,
+          socHistory: live.socHistory,
+        }),
+        seq: live.seq,
+        status: live.status,
+        lastLapS: live.lastLapS,
+        deltaToTargetS: live.deltaToTargetS,
+        strategy: live.strategy,
+      };
+      if (isDiscontinuity(current, telemetry)) smoothing.prev = null;
       useRaceStore.setState({
         frame,
-        telemetry: {
-          ...current,
-          ...fromFrame(frame, {
-            fuelTargetPerLapKg: live.fuelTargetPerLapKg,
-            socHistory: live.socHistory,
-          }),
-          status: live.status,
-          lastLapS: live.lastLapS,
-          deltaToTargetS: live.deltaToTargetS,
-          strategy: live.strategy,
-        },
+        telemetry,
+        display: publish(smoothing, telemetry),
       });
       break;
     }
 
+    // Lists are never smoothed, so they are written straight through to both
+    // layers and the two stay identical.
     case "laps":
-      if (!store.telemetry) return;
+      if (!store.telemetry || !store.display) return;
       useRaceStore.setState({
         telemetry: { ...store.telemetry, laps: message.laps },
+        display: { ...store.display, laps: message.laps },
       });
       break;
 
     case "alerts":
-      if (!store.telemetry) return;
+      if (!store.telemetry || !store.display) return;
       useRaceStore.setState({
         telemetry: { ...store.telemetry, alerts: message.alerts },
+        display: { ...store.display, alerts: message.alerts },
       });
       break;
 
     case "agentMessages":
-      if (!store.telemetry) return;
+      if (!store.telemetry || !store.display) return;
       useRaceStore.setState({
-        telemetry: {
-          ...store.telemetry,
-          agentMessages: message.agentMessages,
-        },
+        telemetry: { ...store.telemetry, agentMessages: message.agentMessages },
+        display: { ...store.display, agentMessages: message.agentMessages },
       });
       break;
 
