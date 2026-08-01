@@ -1,10 +1,10 @@
 {
   "description": "Identity of the model that interprets anomalies, and the labels the UI shows for it. Feedback round-01 F4 asks for explicit attribution on agent output; Q3 asks that the version string come from the configured model rather than being hardcoded in a component. This file is that single source.",
   "model": {
-    "id": "gemma-3-27b-it",
-    "display_name": "Gemma 3 27B",
+    "id": "gemma-4-27b-it",
+    "display_name": "Gemma 4 27B",
     "verified": false,
-    "verification_note": "Q3 is unresolved: the walkthrough said 'Gemma 4', which is not a model that has been confirmed here, and no inference call is wired up yet. Until a real client sets this from the model it actually calls, the UI shows the name greyed with an 'unverified' marker rather than asserting a version it cannot back up. Set verified to true once a call site reports this id."
+    "verification_note": "Set to the Gemma 4 line on request. Still unverified because nothing in this codebase calls it yet - verified means a real inference call reported this id back, not that someone typed it. The UI therefore keeps showing the name muted with an 'unverified' marker. Flip verified to true at the point a client is wired up and returns this identifier, and correct the size suffix then if the deployed variant is not 27B."
   },
   "producers": {
     "description": "What generates each alert tier (docs/alert-system.md). The alerts panel groups by these, so a viewer can tell model-generated reasoning from a static rule firing — feedback round-01 F5.",
