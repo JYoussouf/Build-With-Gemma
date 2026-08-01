@@ -5,26 +5,26 @@
   "track_length_m": 2921.8,
   "total_laps": 57,
   "telemetry_hz": 10,
-  "duration_s": 3557.1,
+  "duration_s": 3581,
   "frames": {
     "description": "The full race at 10 Hz is too large for git. telemetry-10hz.jsonl is the opening laps at full rate; telemetry-1hz.jsonl is the whole race decimated. Regenerate either with website/scripts/generate-data.ts.",
-    "total_at_10hz": 35571,
+    "total_at_10hz": 35810,
     "full_rate_file": "telemetry-10hz.jsonl",
     "full_rate_laps": 3,
-    "full_rate_frames": 1875,
+    "full_rate_frames": 1898,
     "decimated_file": "telemetry-1hz.jsonl",
     "decimated_hz": 1,
-    "decimated_frames": 3558
+    "decimated_frames": 3581
   },
   "starting_fuel_kg": 100,
   "starting_compound": "medium",
-  "fastest_lap_s": 62.4,
-  "fuel_used_kg": 38.59,
-  "final_tyre_wear_pct": 44.42,
+  "fastest_lap_s": 62.8,
+  "fuel_used_kg": 38.55,
+  "final_tyre_wear_pct": 44.41,
   "alerts_by_tier": {
     "2a": 11,
     "2b": 20,
-    "2c": 29
+    "2c": 30
   },
   "schema": {
     "telemetry": "../../schema/telemetry-frame.schema.json",

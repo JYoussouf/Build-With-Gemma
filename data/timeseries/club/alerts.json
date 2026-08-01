@@ -27,15 +27,15 @@
     "severity": "medium",
     "lap": 2,
     "title": "ERS harvest decline",
-    "message": "Harvest 1.9 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 3.9 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
-    "created_at": 45.2
+    "created_at": 48.8
   },
   {
     "id": "alert-4",
     "tier": "2c",
     "severity": "medium",
-    "lap": 4,
+    "lap": 3,
     "title": "ERS state of charge decay",
     "message": "State of charge is declining faster than the deployment model predicts across the last four laps.",
     "status": "pending",
@@ -55,9 +55,9 @@
     "severity": "low",
     "lap": 5,
     "title": "Brake temp check",
-    "message": "Brakes 532° front, 299° rear. In window.",
+    "message": "Brakes 329° front, 205° rear. In window.",
     "status": "sent",
-    "created_at": 180.2
+    "created_at": 191.6
   },
   {
     "id": "alert-7",
@@ -87,9 +87,9 @@
     "severity": "medium",
     "lap": 8,
     "title": "ERS harvest decline",
-    "message": "Harvest 2.0 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 3.9 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
-    "created_at": 315.2
+    "created_at": 334.4
   },
   {
     "id": "alert-10",
@@ -115,9 +115,9 @@
     "severity": "low",
     "lap": 10,
     "title": "Brake temp check",
-    "message": "Brakes 532° front, 299° rear. In window.",
+    "message": "Brakes 331° front, 206° rear. In window.",
     "status": "sent",
-    "created_at": 405.2
+    "created_at": 429.6
   },
   {
     "id": "alert-13",
@@ -147,9 +147,9 @@
     "severity": "medium",
     "lap": 14,
     "title": "ERS harvest decline",
-    "message": "Harvest 2.0 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 3.9 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
-    "created_at": 585.2
+    "created_at": 620
   },
   {
     "id": "alert-15",
@@ -175,15 +175,15 @@
     "severity": "low",
     "lap": 15,
     "title": "Brake temp check",
-    "message": "Brakes 531° front, 298° rear. In window.",
+    "message": "Brakes 327° front, 204° rear. In window.",
     "status": "sent",
-    "created_at": 630.2
+    "created_at": 667.6
   },
   {
     "id": "alert-18",
     "tier": "2c",
     "severity": "high",
-    "lap": 17,
+    "lap": 16,
     "title": "Rear axle temperature divergence",
     "message": "Rear axle running hotter than the traction model expects for this fuel load and track temp.",
     "status": "pending",
@@ -203,29 +203,9 @@
   },
   {
     "id": "alert-20",
-    "tier": "2a",
-    "severity": "low",
-    "lap": 20,
-    "title": "Brake temp check",
-    "message": "Brakes 530° front, 297° rear. In window.",
-    "status": "sent",
-    "created_at": 855.2
-  },
-  {
-    "id": "alert-21",
-    "tier": "2b",
-    "severity": "medium",
-    "lap": 20,
-    "title": "ERS harvest decline",
-    "message": "Harvest 2.0 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
-    "status": "sent",
-    "created_at": 855.2
-  },
-  {
-    "id": "alert-22",
     "tier": "2c",
     "severity": "medium",
-    "lap": 20,
+    "lap": 19,
     "title": "Fuel flow instability",
     "message": "Fuel flow rate oscillating outside the normal band on throttle application.",
     "status": "pending",
@@ -240,10 +220,30 @@
     "recommendation": "Smoother throttle pickup out of the slow corners."
   },
   {
+    "id": "alert-21",
+    "tier": "2a",
+    "severity": "low",
+    "lap": 20,
+    "title": "Brake temp check",
+    "message": "Brakes 329° front, 205° rear. In window.",
+    "status": "sent",
+    "created_at": 905.6
+  },
+  {
+    "id": "alert-22",
+    "tier": "2b",
+    "severity": "medium",
+    "lap": 20,
+    "title": "ERS harvest decline",
+    "message": "Harvest 3.9 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "status": "sent",
+    "created_at": 905.6
+  },
+  {
     "id": "alert-24",
     "tier": "2c",
     "severity": "high",
-    "lap": 23,
+    "lap": 22,
     "title": "Brake caliper drift",
     "message": "Left front brake caliper may be sticking. Generating excess heat that is transferring into the tyre.",
     "status": "pending",
@@ -263,19 +263,9 @@
   },
   {
     "id": "alert-26",
-    "tier": "2a",
-    "severity": "low",
-    "lap": 25,
-    "title": "Brake temp check",
-    "message": "Brakes 531° front, 298° rear. In window.",
-    "status": "sent",
-    "created_at": 1080.2
-  },
-  {
-    "id": "alert-27",
     "tier": "2c",
     "severity": "medium",
-    "lap": 25,
+    "lap": 24,
     "title": "ERS state of charge decay",
     "message": "State of charge is declining faster than the deployment model predicts across the last four laps.",
     "status": "pending",
@@ -290,20 +280,30 @@
     "recommendation": "Switch to balanced deploy through S2 and rebuild charge before the pit window."
   },
   {
+    "id": "alert-27",
+    "tier": "2a",
+    "severity": "low",
+    "lap": 25,
+    "title": "Brake temp check",
+    "message": "Brakes 328° front, 204° rear. In window.",
+    "status": "sent",
+    "created_at": 1143.6
+  },
+  {
     "id": "alert-28",
     "tier": "2b",
     "severity": "medium",
     "lap": 26,
     "title": "ERS harvest decline",
-    "message": "Harvest 2.0 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 3.9 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
-    "created_at": 1125.2
+    "created_at": 1191.2
   },
   {
-    "id": "alert-30",
+    "id": "alert-29",
     "tier": "2c",
     "severity": "high",
-    "lap": 28,
+    "lap": 26,
     "title": "Rear axle temperature divergence",
     "message": "Rear axle running hotter than the traction model expects for this fuel load and track temp.",
     "status": "pending",
@@ -323,19 +323,9 @@
   },
   {
     "id": "alert-31",
-    "tier": "2a",
-    "severity": "low",
-    "lap": 30,
-    "title": "Brake temp check",
-    "message": "Brakes 532° front, 299° rear. In window.",
-    "status": "sent",
-    "created_at": 1305.2
-  },
-  {
-    "id": "alert-33",
     "tier": "2c",
     "severity": "medium",
-    "lap": 31,
+    "lap": 29,
     "title": "Fuel flow instability",
     "message": "Fuel flow rate oscillating outside the normal band on throttle application.",
     "status": "pending",
@@ -350,20 +340,30 @@
     "recommendation": "Smoother throttle pickup out of the slow corners."
   },
   {
+    "id": "alert-32",
+    "tier": "2a",
+    "severity": "low",
+    "lap": 30,
+    "title": "Brake temp check",
+    "message": "Brakes 331° front, 206° rear. In window.",
+    "status": "sent",
+    "created_at": 1381.6
+  },
+  {
     "id": "alert-34",
     "tier": "2b",
     "severity": "medium",
     "lap": 32,
     "title": "ERS harvest decline",
-    "message": "Harvest 2.0 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "message": "Harvest 3.9 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
-    "created_at": 1395.2
+    "created_at": 1476.8
   },
   {
-    "id": "alert-36",
+    "id": "alert-35",
     "tier": "2c",
     "severity": "high",
-    "lap": 34,
+    "lap": 32,
     "title": "Brake caliper drift",
     "message": "Left front brake caliper may be sticking. Generating excess heat that is transferring into the tyre.",
     "status": "pending",
@@ -383,19 +383,9 @@
   },
   {
     "id": "alert-37",
-    "tier": "2a",
-    "severity": "low",
-    "lap": 35,
-    "title": "Brake temp check",
-    "message": "Brakes 532° front, 299° rear. In window.",
-    "status": "sent",
-    "created_at": 1530.2
-  },
-  {
-    "id": "alert-39",
     "tier": "2c",
     "severity": "medium",
-    "lap": 36,
+    "lap": 34,
     "title": "ERS state of charge decay",
     "message": "State of charge is declining faster than the deployment model predicts across the last four laps.",
     "status": "pending",
@@ -410,20 +400,20 @@
     "recommendation": "Switch to balanced deploy through S2 and rebuild charge before the pit window."
   },
   {
-    "id": "alert-40",
-    "tier": "2b",
-    "severity": "medium",
-    "lap": 38,
-    "title": "ERS harvest decline",
-    "message": "Harvest 2.0 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "id": "alert-38",
+    "tier": "2a",
+    "severity": "low",
+    "lap": 35,
+    "title": "Brake temp check",
+    "message": "Brakes 329° front, 205° rear. In window.",
     "status": "sent",
-    "created_at": 1665.2
+    "created_at": 1619.6
   },
   {
-    "id": "alert-42",
+    "id": "alert-40",
     "tier": "2c",
     "severity": "high",
-    "lap": 39,
+    "lap": 37,
     "title": "Rear axle temperature divergence",
     "message": "Rear axle running hotter than the traction model expects for this fuel load and track temp.",
     "status": "pending",
@@ -442,20 +432,20 @@
     "recommendation": "Short shift out of T6 and T9. Protect the rears for the next three laps."
   },
   {
-    "id": "alert-43",
-    "tier": "2a",
-    "severity": "low",
-    "lap": 40,
-    "title": "Brake temp check",
-    "message": "Brakes 531° front, 298° rear. In window.",
+    "id": "alert-41",
+    "tier": "2b",
+    "severity": "medium",
+    "lap": 38,
+    "title": "ERS harvest decline",
+    "message": "Harvest 3.9 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
     "status": "sent",
-    "created_at": 1755.2
+    "created_at": 1762.4
   },
   {
-    "id": "alert-45",
+    "id": "alert-43",
     "tier": "2c",
     "severity": "medium",
-    "lap": 42,
+    "lap": 39,
     "title": "Fuel flow instability",
     "message": "Fuel flow rate oscillating outside the normal band on throttle application.",
     "status": "pending",
@@ -470,30 +460,20 @@
     "recommendation": "Smoother throttle pickup out of the slow corners."
   },
   {
-    "id": "alert-46",
-    "tier": "2b",
-    "severity": "medium",
-    "lap": 44,
-    "title": "ERS harvest decline",
-    "message": "Harvest 2.0 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
-    "status": "sent",
-    "created_at": 1935.2
-  },
-  {
-    "id": "alert-47",
+    "id": "alert-44",
     "tier": "2a",
     "severity": "low",
-    "lap": 45,
+    "lap": 40,
     "title": "Brake temp check",
-    "message": "Brakes 530° front, 297° rear. In window.",
+    "message": "Brakes 329° front, 205° rear. In window.",
     "status": "sent",
-    "created_at": 1980.2
+    "created_at": 1857.6
   },
   {
-    "id": "alert-49",
+    "id": "alert-46",
     "tier": "2c",
     "severity": "high",
-    "lap": 45,
+    "lap": 42,
     "title": "Brake caliper drift",
     "message": "Left front brake caliper may be sticking. Generating excess heat that is transferring into the tyre.",
     "status": "pending",
@@ -512,10 +492,20 @@
     "recommendation": "Reduce braking T1 and T4. Rear bias up two clicks. Monitor two laps, box if no improvement."
   },
   {
-    "id": "alert-50",
+    "id": "alert-47",
+    "tier": "2b",
+    "severity": "medium",
+    "lap": 44,
+    "title": "ERS harvest decline",
+    "message": "Harvest 3.9 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "status": "sent",
+    "created_at": 2048
+  },
+  {
+    "id": "alert-48",
     "tier": "2c",
     "severity": "medium",
-    "lap": 47,
+    "lap": 44,
     "title": "ERS state of charge decay",
     "message": "State of charge is declining faster than the deployment model predicts across the last four laps.",
     "status": "pending",
@@ -530,30 +520,20 @@
     "recommendation": "Switch to balanced deploy through S2 and rebuild charge before the pit window."
   },
   {
-    "id": "alert-52",
+    "id": "alert-49",
     "tier": "2a",
     "severity": "low",
-    "lap": 50,
+    "lap": 45,
     "title": "Brake temp check",
-    "message": "Brakes 531° front, 298° rear. In window.",
+    "message": "Brakes 327° front, 204° rear. In window.",
     "status": "sent",
-    "created_at": 2205.2
+    "created_at": 2095.6
   },
   {
-    "id": "alert-53",
-    "tier": "2b",
-    "severity": "medium",
-    "lap": 50,
-    "title": "ERS harvest decline",
-    "message": "Harvest 2.0 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
-    "status": "sent",
-    "created_at": 2205.2
-  },
-  {
-    "id": "alert-54",
+    "id": "alert-51",
     "tier": "2c",
     "severity": "high",
-    "lap": 50,
+    "lap": 47,
     "title": "Rear axle temperature divergence",
     "message": "Rear axle running hotter than the traction model expects for this fuel load and track temp.",
     "status": "pending",
@@ -572,10 +552,30 @@
     "recommendation": "Short shift out of T6 and T9. Protect the rears for the next three laps."
   },
   {
-    "id": "alert-56",
+    "id": "alert-53",
+    "tier": "2a",
+    "severity": "low",
+    "lap": 50,
+    "title": "Brake temp check",
+    "message": "Brakes 330° front, 206° rear. In window.",
+    "status": "sent",
+    "created_at": 2333.6
+  },
+  {
+    "id": "alert-54",
+    "tier": "2b",
+    "severity": "medium",
+    "lap": 50,
+    "title": "ERS harvest decline",
+    "message": "Harvest 3.9 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "status": "sent",
+    "created_at": 2333.6
+  },
+  {
+    "id": "alert-55",
     "tier": "2c",
     "severity": "medium",
-    "lap": 52,
+    "lap": 50,
     "title": "Fuel flow instability",
     "message": "Fuel flow rate oscillating outside the normal band on throttle application.",
     "status": "pending",
@@ -590,30 +590,10 @@
     "recommendation": "Smoother throttle pickup out of the slow corners."
   },
   {
-    "id": "alert-58",
-    "tier": "2a",
-    "severity": "low",
-    "lap": 55,
-    "title": "Brake temp check",
-    "message": "Brakes 532° front, 299° rear. In window.",
-    "status": "sent",
-    "created_at": 2430.2
-  },
-  {
-    "id": "alert-59",
-    "tier": "2b",
-    "severity": "medium",
-    "lap": 56,
-    "title": "ERS harvest decline",
-    "message": "Harvest 2.0 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
-    "status": "sent",
-    "created_at": 2475.2
-  },
-  {
-    "id": "alert-60",
+    "id": "alert-57",
     "tier": "2c",
     "severity": "high",
-    "lap": 56,
+    "lap": 53,
     "title": "Brake caliper drift",
     "message": "Left front brake caliper may be sticking. Generating excess heat that is transferring into the tyre.",
     "status": "pending",
@@ -630,5 +610,65 @@
       }
     ],
     "recommendation": "Reduce braking T1 and T4. Rear bias up two clicks. Monitor two laps, box if no improvement."
+  },
+  {
+    "id": "alert-59",
+    "tier": "2a",
+    "severity": "low",
+    "lap": 55,
+    "title": "Brake temp check",
+    "message": "Brakes 329° front, 205° rear. In window.",
+    "status": "sent",
+    "created_at": 2571.6
+  },
+  {
+    "id": "alert-60",
+    "tier": "2c",
+    "severity": "medium",
+    "lap": 55,
+    "title": "ERS state of charge decay",
+    "message": "State of charge is declining faster than the deployment model predicts across the last four laps.",
+    "status": "pending",
+    "created_at": 2581.5,
+    "sigma": 2.6,
+    "channels": [
+      {
+        "name": "ers_soc_pct",
+        "sigma": 2.6
+      }
+    ],
+    "recommendation": "Switch to balanced deploy through S2 and rebuild charge before the pit window."
+  },
+  {
+    "id": "alert-61",
+    "tier": "2b",
+    "severity": "medium",
+    "lap": 56,
+    "title": "ERS harvest decline",
+    "message": "Harvest 3.9 MJ, below the 5.0 MJ floor. Brake later into the heavy zones.",
+    "status": "sent",
+    "created_at": 2619.2
+  },
+  {
+    "id": "alert-63",
+    "tier": "2c",
+    "severity": "high",
+    "lap": 57,
+    "title": "Rear axle temperature divergence",
+    "message": "Rear axle running hotter than the traction model expects for this fuel load and track temp.",
+    "status": "pending",
+    "created_at": 2694.6,
+    "sigma": 2.9,
+    "channels": [
+      {
+        "name": "tyre_temp_rl",
+        "sigma": 2.9
+      },
+      {
+        "name": "tyre_temp_rr",
+        "sigma": 2.2
+      }
+    ],
+    "recommendation": "Short shift out of T6 and T9. Protect the rears for the next three laps."
   }
 ]

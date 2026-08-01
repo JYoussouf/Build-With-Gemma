@@ -105,7 +105,12 @@ export function pointAt(track: Track, pos: number): TrackPoint {
  */
 export function curvatureAhead(track: Track, pos: number, metres: number): number {
   let peak = 0;
-  const steps = 8;
+  // Step at the track's own point spacing. Sampling coarser than the geometry
+  // steps straight over a short corner: a fixed 8 samples over 140 m meant a
+  // 17.5 m stride, which missed the 3.7 m radius hairpin on the sprint circuit
+  // entirely, so the car arrived at it unbraked at 14.9 g.
+  const spacing = track.lengthM / track.points.length;
+  const steps = Math.max(8, Math.ceil(metres / spacing));
   for (let i = 1; i <= steps; i++) {
     const ahead = pos + (metres * i) / steps / track.lengthM;
     peak = Math.max(peak, Math.abs(pointAt(track, ahead).curvature));
