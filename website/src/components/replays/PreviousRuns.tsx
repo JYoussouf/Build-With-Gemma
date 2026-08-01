@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import trackIndex from "@data/tracks/index.json";
 import { RunSummary } from "@/lib/replay";
 import { TrackDiagram } from "@/components/dashboard/TrackDiagram";
 import { getTrack } from "@/lib/track";
@@ -30,8 +31,16 @@ export function PreviousRuns({ onReplay, onViewAlerts }: Props) {
     fetch("/api/runs")
       .then((r) => r.json())
       .then((body: { runs: RunSummary[] }) => {
-        setRuns(body.runs);
-        setSelected((cur) => cur ?? body.runs[0]?.track_key ?? null);
+        // The featured run leads and is selected on open. Named in
+        // data/tracks/index.json rather than here, so which run headlines the
+        // tab is a data decision rather than a component one.
+        const featured = trackIndex.featured_run;
+        const ordered = [...body.runs].sort(
+          (a, b) =>
+            Number(b.track_key === featured) - Number(a.track_key === featured),
+        );
+        setRuns(ordered);
+        setSelected((cur) => cur ?? ordered[0]?.track_key ?? null);
       })
       .catch(() => setError("Could not load recorded runs."));
   }, []);
