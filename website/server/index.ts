@@ -14,9 +14,9 @@
  * be kept in step. When the real backend arrives it should keep the wire
  * protocol in `src/lib/protocol.ts`, at which point the clients do not change.
  *
- * Not implemented, and deliberately so for a one-day build: auth, persistence,
- * and more than one concurrent race. See the database discussion in the
- * project notes — durable history is a post-hackathon concern.
+ * Persistence is backed by PostgreSQL (TimescaleDB-compatible schema). Every
+ * tick's telemetry frame, lap summaries, agent messages, and alerts are written
+ * to the database so races can be replayed and queried after the fact.
  */
 
 import { WebSocketServer, WebSocket } from "ws";
@@ -39,35 +39,63 @@ import {
   step,
 } from "../src/lib/simulation";
 import { DEFAULT_TRACK_KEY, getTrack } from "../src/lib/track";
+import {
+  insertAgentMessage,
+  insertAlert,
+  insertPitStop,
+  insertRace,
+  insertTelemetry,
+  updateRaceStatus,
+  upsertLapSummary,
+} from "./db";
 
 /** Wall-clock tick. Matches the 10 Hz packet rate the phone will stream at. */
 const TICK_MS = 100;
 /** Physics substep, so time compression cannot destabilise the models. */
 const SUBSTEP_S = 0.1;
+/** Persist telemetry every N ticks to avoid overwhelming the DB (1 Hz writes). */
+const PERSIST_EVERY_TICKS = 10;
 
 const port = Number(process.env.RACE_WS_PORT ?? DEFAULT_WS_PORT);
 
 interface Race {
   id: string;
+  /** UUID from the database, so clients can query historical data. */
+  dbId: string;
   trackKey: string;
   sim: SimState;
   control: ControlState;
   /** Seconds of race time elapsed, which is what frame timestamps use. */
   clock: number;
+  /** Tick counter since race start, for throttling DB writes. */
+  tickCount: number;
+  /** Lap count at the last persist, to detect new laps. */
+  lastPersistedLap: number;
 }
 
-function newRace(trackKey: string, control: ControlState): Race {
+async function newRace(trackKey: string, control: ControlState): Promise<Race> {
+  const track = getTrack(trackKey);
+  const sim = createSimState(trackKey);
+  const dbId = await insertRace(
+    track.name,
+    sim.telemetry.totalLaps,
+    sim.telemetry.fuel.startKg,
+    sim.telemetry.tyres.compound,
+  );
+
   return {
-    // Stable per race so a reconnecting client can tell it is the same one.
     id: `race-${trackKey}-${Date.now().toString(36)}`,
+    dbId,
     trackKey,
-    sim: createSimState(trackKey),
+    sim,
     control,
     clock: 0,
+    tickCount: 0,
+    lastPersistedLap: 0,
   };
 }
 
-let race = newRace(DEFAULT_TRACK_KEY, { running: true, speedMultiplier: 4 });
+let race: Race;
 
 const metaOf = (r: Race): RaceMeta => ({
   raceId: r.id,
@@ -126,8 +154,8 @@ function snapshotFor(socket: WebSocket) {
  * Restarts the race, which is what changing track means — the physics state
  * is track-specific, so there is nothing to carry over.
  */
-function restart(trackKey: string) {
-  race = newRace(trackKey, race.control);
+async function restart(trackKey: string) {
+  race = await newRace(trackKey, race.control);
   broadcast({ type: "meta", meta: metaOf(race) });
   broadcast({ type: "control", control: race.control });
   for (const socket of clients) snapshotFor(socket);
@@ -146,7 +174,13 @@ function handle(message: ClientMessage) {
       break;
 
     case "pit":
+      const oldCompound = race.sim.telemetry.tyres.compound;
+      const lapAtPit = race.sim.telemetry.lap;
+      const wearAtPit = race.sim.telemetry.tyres.wearPct;
       race.sim = applyPit(race.sim, message.compound);
+      insertPitStop(race.dbId, lapAtPit, oldCompound, message.compound, wearAtPit).catch(
+        (err) => console.error("DB pit stop insert failed:", err),
+      );
       broadcast({
         type: "agentMessages",
         agentMessages: race.sim.telemetry.agentMessages,
@@ -170,6 +204,59 @@ function handle(message: ClientMessage) {
     case "reset":
       restart(race.trackKey);
       break;
+  }
+}
+
+/** Persists a telemetry frame, new laps, new alerts, and new agent messages to PostgreSQL. */
+async function persistTick(before: typeof race.sim.telemetry, after: typeof race.sim.telemetry) {
+  race.tickCount++;
+
+  // Persist telemetry at 1 Hz (every 10 ticks) to keep DB load reasonable.
+  if (race.tickCount % PERSIST_EVERY_TICKS === 0) {
+    const frame = frameOf(race);
+    try {
+      await insertTelemetry(race.dbId, frame);
+    } catch (err) {
+      console.error("DB telemetry insert failed:", err);
+    }
+  }
+
+  // New lap detected — persist the lap summary.
+  if (after.laps !== before.laps && after.laps.length > 0) {
+    const lastLap = after.laps[after.laps.length - 1];
+    try {
+      await upsertLapSummary(race.dbId, lastLap);
+    } catch (err) {
+      console.error("DB lap summary insert failed:", err);
+    }
+  }
+
+  // New alerts — persist them.
+  if (after.alerts !== before.alerts) {
+    const newAlerts = after.alerts.filter(
+      (a) => !before.alerts.some((b) => b.id === a.id),
+    );
+    for (const alert of newAlerts) {
+      try {
+        await insertAlert(race.dbId, alert);
+      } catch (err) {
+        console.error("DB alert insert failed:", err);
+      }
+    }
+  }
+
+  // New agent messages — persist them.
+  if (after.agentMessages !== before.agentMessages) {
+    const newMsgs = after.agentMessages.filter(
+      (m) => !before.agentMessages.some((b) => b.id === m.id),
+    );
+    for (const msg of newMsgs) {
+      try {
+        await insertAgentMessage(race.dbId, msg);
+      } catch (err) {
+        console.error("DB agent message insert failed:", err);
+      }
+    }
   }
 }
 
@@ -217,6 +304,11 @@ setInterval(() => {
   const after = race.sim.telemetry;
   broadcast({ type: "frame", frame: frameOf(race), live: liveOf(race) });
 
+  // Persist to PostgreSQL (fire-and-forget so the tick loop never blocks).
+  persistTick(before, after).catch((err) =>
+    console.error("persist tick error:", err),
+  );
+
   // The simulator replaces these arrays rather than mutating them, so an
   // identity check is enough to spot a new lap, alert, or agent message.
   if (after.laps !== before.laps) {
@@ -228,10 +320,27 @@ setInterval(() => {
   if (after.agentMessages !== before.agentMessages) {
     broadcast({ type: "agentMessages", agentMessages: after.agentMessages });
   }
+
+  // When the race finishes, mark it in the database.
+  if (after.status === "finished" && race.lastPersistedLap !== -1) {
+    race.lastPersistedLap = -1;
+    updateRaceStatus(race.dbId, "completed").catch((err) =>
+      console.error("DB race status update failed:", err),
+    );
+  }
 }, TICK_MS);
 
-console.log(
-  `race server on ws://localhost:${port}\n` +
-    `  track ${race.trackKey}, ${race.sim.telemetry.totalLaps} laps, ` +
-    `${race.control.speedMultiplier}x speed`,
-);
+async function main() {
+  race = await newRace(DEFAULT_TRACK_KEY, { running: true, speedMultiplier: 4 });
+  console.log(
+    `race server on ws://localhost:${port}\n` +
+      `  track ${race.trackKey}, ${race.sim.telemetry.totalLaps} laps, ` +
+      `${race.control.speedMultiplier}x speed\n` +
+      `  db race id: ${race.dbId}`,
+  );
+}
+
+main().catch((err) => {
+  console.error("Failed to start race server:", err);
+  process.exit(1);
+});
