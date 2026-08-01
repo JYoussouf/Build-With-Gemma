@@ -65,6 +65,7 @@ corner-cutting a racing line actually does. `build:geometry` prints the drift.
 | `alert-rules.json`       | Tier 2a preventative rules                                            |
 | `signal-patterns.json`   | Tier 2b signal detection patterns                                     |
 | `anomaly-detection.json` | Tier 2c sensitivity and Gemma's interpretation templates               |
+| `agent-filter.json`      | Agent-In-The-Loop filter: prompt, rule catalogue, carried-in rules     |
 | `weather-presets.json`   | Seed conditions and the live simulator's event cadence                 |
 | `race-defaults.json`     | Track, lap count, starting compound, strategy, telemetry rate          |
 
