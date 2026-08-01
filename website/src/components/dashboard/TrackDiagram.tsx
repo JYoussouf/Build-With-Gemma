@@ -4,9 +4,6 @@ import clubContext from "@data/tracks/club.context.json";
 import grandContext from "@data/tracks/grand.context.json";
 import sprintContext from "@data/tracks/sprint.context.json";
 
-import landmarks from "@data/tracks/landmarks.json";
-import trackIndex from "@data/tracks/index.json";
-import { boundsFromViewBox, satelliteUrl } from "@/lib/satellite";
 import { pointAt, Track } from "@/lib/track";
 
 /**
@@ -79,9 +76,6 @@ const CLASS_INK: Record<number, string> = {
  */
 const CONTEXT_ZOOM_OUT = 0.28;
 
-const M_PER_DEG_LAT = 110540;
-const M_PER_DEG_LON = 111320;
-
 /** Widens a viewBox about its centre. */
 function expand(viewBox: string, by: number): string {
   const [x, y, w, h] = viewBox.split(/\s+/).map(Number);
@@ -94,21 +88,11 @@ interface Props {
   track: Track;
   /** Normalised lap position of the car, if one should be drawn. */
   carPos?: number;
+  /** Roughly the on-screen width in pixels, used to scale label text. */
   className?: string;
-  /**
-   * Satellite imagery under the vectors. Off by default: it needs network at
-   * render time, and the small pit-wall map is too dense for photography to
-   * help there.
-   */
-  satellite?: boolean;
 }
 
-export function TrackDiagram({
-  track,
-  carPos,
-  className = "",
-  satellite = false,
-}: Props) {
+export function TrackDiagram({ track, carPos, className = "" }: Props) {
   const context = CONTEXT[track.key];
   const start = pointAt(track, 0);
   // Road width in metres, scaled to the circuit so a 3 km loop and an 800 m
@@ -118,31 +102,6 @@ export function TrackDiagram({
   const viewBox = context
     ? expand(track.svg.viewBox, CONTEXT_ZOOM_OUT)
     : track.svg.viewBox;
-  const bounds = boundsFromViewBox(viewBox);
-  const imagery = satellite ? satelliteUrl(track.key, bounds) : null;
-
-  // Landmarks worth naming that the OSM extract does not label usefully.
-  // Projected with this track's own centre and kept only if the map actually
-  // reaches them, so nothing is annotated onto a circuit it is nowhere near.
-  const center = trackIndex.tracks.find((t) => t.key === track.key)?.center;
-  const visibleLandmarks = center
-    ? landmarks.landmarks
-        .map((l) => ({
-          ...l,
-          x:
-            (l.lon - center.lon) *
-            M_PER_DEG_LON *
-            Math.cos((center.lat * Math.PI) / 180),
-          y: (l.lat - center.lat) * M_PER_DEG_LAT,
-        }))
-        .filter(
-          (l) =>
-            l.x >= bounds.minX &&
-            l.x <= bounds.maxX &&
-            l.y >= bounds.minY &&
-            l.y <= bounds.maxY,
-        )
-    : [];
 
   return (
     <svg
@@ -151,23 +110,9 @@ export function TrackDiagram({
       role="img"
       aria-label={`${track.name}, drawn over the surrounding streets`}
     >
-      {/* Satellite imagery, at the very bottom. If the request fails the map
-          still reads: every layer above it is a committed vector. */}
-      {imagery && (
-        <image
-          href={imagery}
-          x={bounds.minX}
-          y={-bounds.maxY}
-          width={bounds.maxX - bounds.minX}
-          height={bounds.maxY - bounds.minY}
-          preserveAspectRatio="none"
-          opacity={0.85}
-        />
-      )}
-
       {/* The real streets, underneath. Drawn first so the racing line always
           sits on top of them. */}
-      {context && !satellite && (
+      {context && (
         <g fill="none" strokeLinecap="round" strokeLinejoin="round">
           {context.ways.map((way, i) => (
             <polyline
@@ -183,7 +128,7 @@ export function TrackDiagram({
       {/* Building massing, between the streets and the circuit. Each footprint
           gets a wall skirt and a lifted roof, which reads as height in a plan
           view without needing a perspective camera. */}
-      {context?.buildings && !satellite && (
+      {context?.buildings && (
         <g>
           {context.buildings.map((b, i) => {
             const dx = b.h * EXTRUDE_X;
@@ -285,50 +230,20 @@ export function TrackDiagram({
         ?.filter((b) => b.n && area(b.p) > LABEL_MIN_AREA)
         .map((b, i) => {
           const c = centroid(b.p);
-          // Labels sit on the footprint over imagery, and on the lifted roof
-          // when the massing is drawn.
-          const lift = satellite ? 0 : b.h;
           return (
             <text
               key={`label-${i}`}
-              x={c[0] + lift * EXTRUDE_X}
-              y={-(c[1] + lift * EXTRUDE_Y)}
+              x={c[0] + b.h * EXTRUDE_X}
+              y={-(c[1] + b.h * EXTRUDE_Y)}
               textAnchor="middle"
-              fill={satellite ? "#f0f0f0" : "#8a8a8a"}
+              fill="#8a8a8a"
               fontSize={road * 0.9}
-              stroke={satellite ? "#000000" : undefined}
-              strokeWidth={satellite ? road * 0.22 : undefined}
-              paintOrder="stroke"
               className="pointer-events-none"
             >
               {b.n}
             </text>
           );
         })}
-
-      {visibleLandmarks.map((l) => (
-        <g key={l.id}>
-          <circle cx={l.x} cy={-l.y} r={road * 0.35} fill="#c8c8c8" />
-          <text
-            x={l.x}
-            y={-l.y - road * 0.9}
-            textAnchor="middle"
-            fill="#c8c8c8"
-            fontSize={road * 1.05}
-          >
-            {l.name}
-          </text>
-          <text
-            x={l.x}
-            y={-l.y + road * 1.5}
-            textAnchor="middle"
-            fill="#8a8a8a"
-            fontSize={road * 0.75}
-          >
-            {l.detail}
-          </text>
-        </g>
-      ))}
 
       {car && (
         <>
