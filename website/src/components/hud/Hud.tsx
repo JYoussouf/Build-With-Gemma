@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
 import { Bar, StatusDot } from "@/components/ui/Readouts";
 import { COMPOUND_LABEL, levelFor, severityLevel, signed } from "@/lib/format";
 import { useRaceStore, useSnapshot } from "@/lib/store";
@@ -22,7 +21,7 @@ export function Hud() {
   const critical = current?.severity === "critical";
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-pit-black">
+    <div className="mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col overflow-y-auto bg-pit-black">
       <header className="flex items-center justify-between border-b border-pit-border px-4 py-2.5">
         <span className="flex items-center gap-2">
           <StatusDot level={t.status === "live" ? "ok" : "warn"} />
@@ -33,9 +32,6 @@ export function Hud() {
         <span className="tnum text-[13px] text-ink">
           Lap {t.lap} / {t.totalLaps}
         </span>
-        <Link href="/dashboard" className="text-[11px] text-ink-secondary hover:text-ink">
-          Pit wall
-        </Link>
       </header>
 
       <SpeedBlock />

@@ -29,7 +29,7 @@ const PLANNED = [
 
 export default function Home() {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col justify-center gap-10 px-6 py-16">
+    <main className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col justify-center gap-10 overflow-y-auto px-6 py-16">
       <header>
         <h1 className="text-2xl font-semibold tracking-[0.24em] text-ink">RACEMIND</h1>
         <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-ink-secondary">

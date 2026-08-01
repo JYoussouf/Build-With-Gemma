@@ -16,7 +16,9 @@ export function LiveDashboard() {
   useRaceClock();
 
   return (
-    <div className="flex h-dvh flex-col">
+    // Fills what the root layout leaves below the tab bar, rather than
+    // claiming the whole viewport and pushing itself off the bottom.
+    <div className="flex min-h-0 flex-1 flex-col">
       <TopBar />
 
       <main className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(0,30fr)_minmax(0,40fr)_minmax(0,30fr)]">

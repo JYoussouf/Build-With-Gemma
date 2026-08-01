@@ -15,9 +15,15 @@ import { Corners } from "@/lib/types";
  */
 export function CentreColumn() {
   return (
-    <div className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3">
+    // Every panel keeps its natural height and the column scrolls when they
+    // do not all fit. Giving Strategy the leftover row instead meant that on a
+    // 900 px viewport it got 24 px for 242 px of content and vanished, and
+    // capping it just moved the squeeze onto Speed & Inputs. A column this
+    // over-subscribed has to scroll; what it must not do is silently crush a
+    // panel to nothing.
+    <div className="flex min-h-0 flex-col gap-3 overflow-y-auto">
       <SpeedAndInputs />
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid shrink-0 gap-3 lg:grid-cols-2">
         <ErsPanel />
         <BrakePanel />
       </div>
@@ -30,7 +36,7 @@ function SpeedAndInputs() {
   const t = useSnapshot((f) => f);
 
   return (
-    <Panel title="Speed & Inputs">
+    <Panel title="Speed & Inputs" className="shrink-0">
       <div className="flex items-end justify-between">
         <div>
           <div className="tnum text-4xl leading-none text-ink">
@@ -218,7 +224,7 @@ function StrategyPanel() {
   return (
     <Panel
       title="Strategy"
-      className="min-h-0"
+      className="shrink-0"
       bodyClassName="flex min-h-0 flex-col overflow-y-auto"
     >
       <div className="text-[13px] text-ink">{s.plan}</div>
