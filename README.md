@@ -7,6 +7,7 @@ Real-time, on-edge racing intelligence that syncs alerts between racer and engin
 | Path       | What it is                                                                             |
 | ---------- | -------------------------------------------------------------------------------------- |
 | `docs/`    | Specifications: telemetry models, alert system, data flow, database schema, UI layouts   |
+| `data/`    | Shared JSON both clients read: tracks, config, schemas, sample and simulated telemetry   |
 | `website/` | Next.js pit wall — engineer dashboard and a browser rendering of the driver HUD          |
 | `app/`     | Flutter driver app (not scaffolded yet; see `app/README.md`)                             |
 | `tools/`   | Track generator tooling                                                                  |

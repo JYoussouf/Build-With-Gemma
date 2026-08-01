@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#000000" />
+  <!-- Start/finish chequer, in the pit-wall greyscale. -->
+  <g fill="#ffffff">
+    <rect x="8" y="9" width="4" height="4" />
+    <rect x="16" y="9" width="4" height="4" />
+    <rect x="12" y="13" width="4" height="4" />
+    <rect x="20" y="13" width="4" height="4" />
+    <rect x="8" y="17" width="4" height="4" />
+    <rect x="16" y="17" width="4" height="4" />
+  </g>
+  <circle cx="24" cy="24" r="3" fill="#00c853" />
+</svg>

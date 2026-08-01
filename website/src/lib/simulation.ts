@@ -4,41 +4,77 @@
  * Stand-in for the real pipeline: phone sensors -> backend physics models ->
  * Redis hot state -> WebSocket (docs/data-flow.md). The models here are the
  * same shape as the ones in docs/tech-stack.md (fuel burn, tyre wear/temp,
- * brake temp, ERS harvest/deploy), just driven by a synthetic car lapping a
- * synthetic track instead of by a human walking around with a phone.
+ * brake temp, ERS harvest/deploy), driven by a synthetic car lapping one of
+ * the real tracks in /data/tracks instead of by a human with a phone.
+ *
+ * Every tunable comes from /data/config so the driver app, the website, and
+ * the eventual backend all agree on one set of numbers.
  *
  * Everything is deterministic — no Date.now(), no Math.random() — so the
  * server-rendered first frame matches the client's.
  */
 
+import anomalyConfig from "@data/config/anomaly-detection.json";
+import compoundConfig from "@data/config/tyre-compounds.json";
+import raceDefaults from "@data/config/race-defaults.json";
+import vehicle from "@data/config/vehicle.json";
+import weatherPresets from "@data/config/weather-presets.json";
+
 import {
   Alert,
   AlertTier,
+  Compound,
   Corners,
   LapSummary,
   Severity,
   Telemetry,
 } from "./types";
-import { curvatureAhead, pointAt, sectorFor, TRACK_LENGTH_M } from "./track";
+import {
+  curvatureAhead,
+  DEFAULT_TRACK_KEY,
+  getTrack,
+  pointAt,
+  sectorFor,
+  Track,
+} from "./track";
 
 const G = 9.81;
-const MAX_LAT_G = 3.8;
-const V_MAX_KMH = 328;
-const V_MIN_KMH = 74;
-const MAX_ACCEL = 11; // m/s^2
-const MAX_DECEL = 42; // m/s^2
 const LOOKAHEAD_M = 140;
-const STARTING_FUEL_KG = 100;
-const MGU_K_MAX_KW = 350;
-const DEPLOY_MAX_KW = 200;
+/** Retained history. Sized to hold a full race rather than a scrolling window. */
+const MAX_LAP_HISTORY = 200;
+const MAX_ALERT_HISTORY = 400;
+/** Damps tyre thermal response: bulk rubber does not swing 40C per corner. */
 const TYRE_INERTIA = 0.3;
 /** Road-wheel angle to steering-wheel angle. */
 const STEERING_RATIO = 4.2;
 
-const GEAR_THRESHOLDS = [0, 62, 108, 152, 194, 234, 272, 302];
+const MAX_LAT_G = vehicle.limits.max_lateral_g;
+const V_MAX_KMH = vehicle.limits.max_speed_kmh;
+const V_MIN_KMH = vehicle.limits.min_speed_kmh;
+const MAX_ACCEL = vehicle.limits.max_accel_ms2;
+const MAX_DECEL = vehicle.limits.max_decel_ms2;
+const STARTING_FUEL_KG = vehicle.fuel.starting_kg;
+const MGU_K_MAX_KW = vehicle.ers.mgu_k_max_kw;
+const DEPLOY_MAX_KW = vehicle.ers.deploy_max_kw;
+const ERS_CAPACITY_KJ = vehicle.ers.capacity_mj * 1000;
+const GEAR_THRESHOLDS = vehicle.gearbox.gear_upshift_speeds_kmh;
+const BRAKE_MIN_C = vehicle.brakes.min_temp_c;
+const BRAKE_MAX_C = vehicle.brakes.max_temp_c;
+const BRAKE_FADE_C = vehicle.brakes.fade_temp_c;
+const GRIP_CLIFF_PCT = compoundConfig.grip_cliff_wear_pct;
 
-const COMPOUND_WEAR = { soft: 1.55, medium: 1.0, hard: 0.72, intermediate: 1.2, wet: 1.3 };
-const COMPOUND_FUEL = { soft: 1.05, medium: 1.0, hard: 0.97, intermediate: 1.08, wet: 1.12 };
+const COMPOUND_WEAR = Object.fromEntries(
+  compoundConfig.compounds.map((c) => [c.key, c.wear_factor]),
+) as Record<Compound, number>;
+const COMPOUND_FUEL = Object.fromEntries(
+  compoundConfig.compounds.map((c) => [c.key, c.fuel_factor]),
+) as Record<Compound, number>;
+
+const SEED_WEATHER =
+  weatherPresets.presets.find((p) => p.key === weatherPresets.default_preset) ??
+  weatherPresets.presets[0];
+
+const ANOMALY_TEMPLATES = anomalyConfig.templates;
 
 /** Mutable bits the models need across ticks that aren't part of the UI state. */
 interface SimScratch {
@@ -55,17 +91,19 @@ interface SimScratch {
 }
 
 export interface SimState {
+  track: Track;
   telemetry: Telemetry;
   scratch: SimScratch;
 }
 
 const corners = (v: number): Corners => ({ fl: v, fr: v, rl: v, rr: v });
 
-export function createSimState(): SimState {
+export function createSimState(trackKey: string = DEFAULT_TRACK_KEY): SimState {
+  const track = getTrack(trackKey);
   const telemetry: Telemetry = {
     status: "live",
     lap: 1,
-    totalLaps: 57,
+    totalLaps: raceDefaults.total_laps,
     lapTimeS: 0,
     lastLapS: 0,
     deltaToTargetS: 0,
@@ -80,20 +118,25 @@ export function createSimState(): SimState {
     lateralG: 0,
     longitudinalG: 0,
     tyres: {
-      compound: "medium",
+      compound: raceDefaults.starting_compound as Compound,
       wearPct: 0,
       gripLevel: 1,
       ageLaps: 0,
       temps: { fl: 82, fr: 84, rl: 79, rr: 80 },
-      pressures: { fl: 21, fr: 21, rl: 19.5, rr: 19.5 },
+      pressures: {
+        fl: vehicle.tyre_pressures_psi.front,
+        fr: vehicle.tyre_pressures_psi.front,
+        rl: vehicle.tyre_pressures_psi.rear,
+        rr: vehicle.tyre_pressures_psi.rear,
+      },
     },
     fuel: {
       remainingKg: STARTING_FUEL_KG,
-      capacityKg: 110,
+      capacityKg: vehicle.fuel.capacity_kg,
       flowRateKgH: 0,
-      avgPerLapKg: 1.72,
-      targetPerLapKg: 1.72,
-      lapsRemaining: 57,
+      avgPerLapKg: raceDefaults.targets.fuel_per_lap_kg,
+      targetPerLapKg: raceDefaults.targets.fuel_per_lap_kg,
+      lapsRemaining: raceDefaults.total_laps,
     },
     ers: {
       socPct: 68,
@@ -105,23 +148,24 @@ export function createSimState(): SimState {
     },
     brakes: { temps: corners(320), padPct: 100, fade: false },
     weather: {
-      airTempC: 28,
-      trackTempC: 42,
-      windKmh: 12,
-      windDir: "NW",
-      rainMmH: 0,
-      condition: "dry",
+      airTempC: SEED_WEATHER.air_temp_c,
+      trackTempC: SEED_WEATHER.track_temp_c,
+      windKmh: SEED_WEATHER.wind_kmh,
+      windDir: SEED_WEATHER.wind_dir,
+      rainMmH: SEED_WEATHER.rain_mm_h,
+      condition: SEED_WEATHER.condition as Telemetry["weather"]["condition"],
     },
     strategy: {
-      plan: "1-stop · Medium → Hard @ Lap 25",
+      plan: raceDefaults.strategy.plan,
       stintLap: 1,
-      stintLength: 25,
-      pitWindow: [23, 28],
-      confidencePct: 82,
-      deltaVsAltS: 0.4,
+      stintLength: raceDefaults.strategy.stint_length_laps,
+      pitWindow: raceDefaults.strategy.pit_window_laps as [number, number],
+      confidencePct: raceDefaults.strategy.confidence_pct,
+      deltaVsAltS: raceDefaults.strategy.delta_vs_alt_s,
       // Nominal until the first lap is on the board; the real pre-race report
       // supplies these from the test lap (docs/website-dashboard.md, View 3).
-      targetLapTimeS: TRACK_LENGTH_M / (168 / 3.6),
+      targetLapTimeS:
+        track.lengthM / (raceDefaults.targets.nominal_avg_speed_kmh / 3.6),
     },
     laps: [],
     alerts: [],
@@ -136,6 +180,7 @@ export function createSimState(): SimState {
   };
 
   return {
+    track,
     telemetry,
     scratch: {
       clock: 0,
@@ -183,6 +228,7 @@ function rpmFor(speedKmh: number, gear: number): number {
  * (new nested objects included) so store selectors see changed references.
  */
 export function step(sim: SimState, dt: number): SimState {
+  const track = sim.track;
   const t = sim.telemetry;
   const sc = { ...sim.scratch };
   sc.clock += dt;
@@ -190,10 +236,11 @@ export function step(sim: SimState, dt: number): SimState {
   if (t.status !== "live") return sim;
 
   // ---- Driver model: target speed from curvature, plus corner-entry braking.
-  const here = pointAt(t.trackPos);
+  const here = pointAt(track, t.trackPos);
   const vNow = t.speedKmh / 3.6;
   const vCorner = corneringSpeedKmh(here.curvature) / 3.6;
-  const vAhead = corneringSpeedKmh(curvatureAhead(t.trackPos, LOOKAHEAD_M)) / 3.6;
+  const vAhead =
+    corneringSpeedKmh(curvatureAhead(track, t.trackPos, LOOKAHEAD_M)) / 3.6;
 
   const braking = vNow > vAhead + 0.5;
   const headroom = clamp((vCorner - vNow) / Math.max(vCorner, 1), 0, 1);
@@ -223,7 +270,7 @@ export function step(sim: SimState, dt: number): SimState {
 
   // ---- Position, sectors, laps.
   const advanceM = ((vNow + vNext) / 2) * dt;
-  let trackPos = t.trackPos + advanceM / TRACK_LENGTH_M;
+  let trackPos = t.trackPos + advanceM / track.lengthM;
   let lap = t.lap;
   const lapTimeS = t.lapTimeS + dt;
   let lastLapS = t.lastLapS;
@@ -235,7 +282,7 @@ export function step(sim: SimState, dt: number): SimState {
     trackPos -= 1;
     crossedLine = true;
   }
-  const sector = sectorFor(trackPos);
+  const sector = sectorFor(track, trackPos);
 
   // ---- Fuel model (docs/tech-stack.md).
   const windFactor = 1 + t.weather.windKmh / 200;
@@ -262,7 +309,8 @@ export function step(sim: SimState, dt: number): SimState {
     thermal;
   const wearPct = clamp(t.tyres.wearPct + wearRate * dt, 0, 100);
   // Grip falls off gently, then falls off a cliff past 62% wear.
-  const cliff = wearPct > 62 ? (wearPct - 62) * 0.006 : 0;
+  const cliff =
+    wearPct > GRIP_CLIFF_PCT ? (wearPct - GRIP_CLIFF_PCT) * 0.006 : 0;
   const gripLevel = clamp(1 - wearPct * 0.0013 - cliff, 0.55, 1);
 
   // ---- Tyre temperatures, per corner. Lateral load heats the outside pair,
@@ -295,9 +343,9 @@ export function step(sim: SimState, dt: number): SimState {
     // Balanced so they swing through roughly 350-750C: hot enough to be worth
     // watching, short of the 1000C fade threshold under normal running.
     const cooling = (temp - t.weather.airTempC) * (0.02 + speedKmh * 0.00035);
-    return clamp(temp + (heatIn - cooling) * dt, 200, 1150);
+    return clamp(temp + (heatIn - cooling) * dt, BRAKE_MIN_C, BRAKE_MAX_C);
   });
-  const brakeFade = Math.max(brakeTemps.fl, brakeTemps.fr) > 1000;
+  const brakeFade = Math.max(brakeTemps.fl, brakeTemps.fr) > BRAKE_FADE_C;
 
   // ---- ERS harvest / deploy.
   let socPct = t.ers.socPct;
@@ -316,7 +364,7 @@ export function step(sim: SimState, dt: number): SimState {
     powerKw = -(throttlePct / 100) * DEPLOY_MAX_KW * (socPct / 100);
     mode = "deploy";
   }
-  socPct = clamp(socPct + ((powerKw * dt) / 4000) * 100, 0, 100);
+  socPct = clamp(socPct + ((powerKw * dt) / ERS_CAPACITY_KJ) * 100, 0, 100);
   if (powerKw > 0) sc.lapHarvest += (powerKw * dt) / 1000;
   if (powerKw < 0) sc.lapDeploy += (-powerKw * dt) / 1000;
 
@@ -390,7 +438,7 @@ export function step(sim: SimState, dt: number): SimState {
       wearPct,
     };
 
-    next.laps = [summary, ...laps].slice(0, 40);
+    next.laps = [summary, ...laps].slice(0, MAX_LAP_HISTORY);
     next.lastLapS = lastLapS;
     next.deltaToTargetS = lastLapS - t.strategy.targetLapTimeS;
     lap = Math.min(t.totalLaps, lap + 1);
@@ -428,13 +476,15 @@ export function step(sim: SimState, dt: number): SimState {
     evaluateLapRules(next, sc);
     maybeSpeak(next, sc);
     if (next.laps[0]) next.laps[0].alertTier = latestTierForLap(next, summary.lap);
-    if (lap >= t.totalLaps) next.status = "finished";
+    // The chequered flag falls when the last lap is *completed*, so compare
+    // against the lap just banked rather than the one about to start.
+    if (summary.lap >= t.totalLaps) next.status = "finished";
   }
 
   evaluateInstantRules(next, sc);
   maybeAnomaly(next, sc);
 
-  return { telemetry: next, scratch: sc };
+  return { track, telemetry: next, scratch: sc };
 }
 
 type CornerKey = keyof Corners;
@@ -456,7 +506,7 @@ function pushAlert(
   t.alerts = [
     { ...a, id: `alert-${sc.seq}`, lap: t.lap, createdAt: sc.clock },
     ...t.alerts,
-  ].slice(0, 60);
+  ].slice(0, MAX_ALERT_HISTORY);
 }
 
 /** Fire at most once every `everyLaps` laps. */
@@ -550,53 +600,6 @@ function evaluateInstantRules(t: Telemetry, sc: SimScratch) {
   }
 }
 
-const ANOMALY_TEMPLATES = [
-  {
-    title: "Brake caliper drift",
-    channels: [
-      { name: "brake_temp_fl", sigma: 3.1 },
-      { name: "tyre_temp_fl", sigma: 1.8 },
-    ],
-    sigma: 3.1,
-    severity: "high" as Severity,
-    message:
-      "Left front brake caliper may be sticking. Generating excess heat that is transferring into the tyre.",
-    recommendation:
-      "Reduce braking T1 and T4. Rear bias up two clicks. Monitor two laps, box if no improvement.",
-  },
-  {
-    title: "ERS state of charge decay",
-    channels: [{ name: "ers_soc_pct", sigma: 2.6 }],
-    sigma: 2.6,
-    severity: "medium" as Severity,
-    message:
-      "State of charge is declining faster than the deployment model predicts across the last four laps.",
-    recommendation:
-      "Switch to balanced deploy through S2 and rebuild charge before the pit window.",
-  },
-  {
-    title: "Rear axle temperature divergence",
-    channels: [
-      { name: "tyre_temp_rl", sigma: 2.9 },
-      { name: "tyre_temp_rr", sigma: 2.2 },
-    ],
-    sigma: 2.9,
-    severity: "high" as Severity,
-    message:
-      "Rear axle running hotter than the traction model expects for this fuel load and track temp.",
-    recommendation:
-      "Short shift out of T6 and T9. Protect the rears for the next three laps.",
-  },
-  {
-    title: "Fuel flow instability",
-    channels: [{ name: "fuel_flow_kgh", sigma: 2.4 }],
-    sigma: 2.4,
-    severity: "medium" as Severity,
-    message:
-      "Fuel flow rate oscillating outside the normal band on throttle application.",
-    recommendation: "Smoother throttle pickup out of the slow corners.",
-  },
-];
 
 /** Tier 2c: TimesFM-style anomaly, queued for engineer approval. */
 function maybeAnomaly(t: Telemetry, sc: SimScratch) {
@@ -606,9 +609,9 @@ function maybeAnomaly(t: Telemetry, sc: SimScratch) {
   sc.anomalyCount += 1;
   pushAlert(t, sc, {
     tier: "2c",
-    severity: tpl.severity,
+    severity: tpl.severity as Severity,
     title: tpl.title,
-    message: tpl.message,
+    message: tpl.interpretation,
     recommendation: tpl.recommendation,
     channels: tpl.channels,
     sigma: tpl.sigma,

@@ -22,11 +22,27 @@ Node 20+ required.
 
 Views 1-3 (Track Setup, Race Configuration, Pre-Race Report) are not built yet.
 
+## Shared data
+
+Tracks, vehicle spec, tyre compounds, alert rules, and weather presets all come
+from [`/data`](../data/README.md) via the `@data/*` path alias — the same files
+the Flutter app reads, so the two cannot drift. Nothing in `src/` hardcodes a
+physics constant.
+
+```bash
+npm run build:geometry   # derive tracks/*.geometry.json from the GPS traces
+npm run generate:data    # + full simulated races into data/timeseries
+npm run validate:data    # everything against data/schema
+```
+
+The track picker in the top bar switches between the three RIM Park circuits;
+switching restarts the race, since the physics state is track-specific.
+
 ## The simulator
 
 There is no backend yet, so `src/lib/simulation.ts` stands in for the whole
 pipeline described in `docs/data-flow.md` (phone sensors → physics models →
-Redis → WebSocket). It runs a synthetic car around a synthetic track and applies
+Redis → WebSocket). It runs a synthetic car around a real GPS track and applies
 the same models the backend will:
 
 | Model      | Drives                                                        |
@@ -40,6 +56,10 @@ the same models the backend will:
 
 It is fully deterministic — no `Date.now()`, no `Math.random()` — so the
 server-rendered frame matches the client's and there are no hydration errors.
+For the same reason, track geometry is derived at build time into
+`/data/tracks/*.geometry.json` rather than projected at render time: `Math.cos`
+is not bit-identical across V8 versions, and the last-decimal difference
+between Node and the browser was enough to trip a hydration mismatch.
 
 Top-bar controls: 1x / 4x / 16x time compression, pause, reset. 4x is the
 default so a lap takes about 20 seconds.
@@ -65,7 +85,8 @@ WebSocket subscription that calls `set({ telemetry })` on each frame, and the
 components are unchanged. `src/lib/types.ts` mirrors the Redis hot-state shape.
 
 `src/components/dashboard/TrackMap.tsx` is a 2D SVG placeholder for the Google
-Photorealistic 3D map (`Map3DElement`); replacing it touches nothing else.
+Photorealistic 3D map (`Map3DElement`); replacing it touches nothing else. It
+renders the real GPS trace, so the 3D swap is a rendering change only.
 
 ## Design rules
 

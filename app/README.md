@@ -13,6 +13,25 @@ Not scaffolded yet. The HUD (Screen 3) has a browser reference implementation at
 — layout, alert tiers, and gauge thresholds there are the spec the Flutter
 screen should match.
 
+## Shared data
+
+The app does not define its own tracks, vehicle spec, or alert rules — it reads
+[`/data`](../data/README.md), the same files the website uses. Declare it in
+`pubspec.yaml`:
+
+```yaml
+flutter:
+  assets:
+    - ../data/tracks/
+    - ../data/config/
+```
+
+Generate the Dart models from `/data/schema/*.schema.json` rather than
+hand-writing them, so the app and website types cannot drift. The sample
+packets in `/data/samples` replay a real lap without a backend, and
+`/data/timeseries` has full simulated races for testing the HUD against
+realistic input.
+
 ## Planned structure
 
 ```
@@ -27,8 +46,9 @@ app/
     services/
       sensors.dart             # sensors_plus + geolocator, axis remapping
       telemetry_socket.dart    # web_socket_channel client + offline buffer
+      replay.dart              # play back /data/samples without a backend
       tts.dart                 # flutter_tts priority queue
-    models/
+    models/                    # generated from /data/schema
   pubspec.yaml
 ```
 

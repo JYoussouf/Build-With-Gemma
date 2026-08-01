@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { COMPOUND_LABEL, levelFor } from "@/lib/format";
 import { useRaceStore } from "@/lib/store";
+import { getTrack, TRACK_KEYS } from "@/lib/track";
 import { StatusDot } from "@/components/ui/Readouts";
 
 const SPEEDS = [1, 4, 16];
@@ -40,6 +41,7 @@ export function TopBar() {
       />
 
       <div className="ml-auto flex items-center gap-2">
+        <TrackPicker />
         <nav className="flex items-center gap-1 text-[11px]">
           <NavLink href="/dashboard">Pit Wall</NavLink>
           <NavLink href="/hud">Driver HUD</NavLink>
@@ -73,6 +75,34 @@ export function TopBar() {
         </button>
       </div>
     </header>
+  );
+}
+
+/** Tracks come from /data/tracks; switching restarts the race. */
+function TrackPicker() {
+  const trackKey = useRaceStore((s) => s.trackKey);
+  const setTrack = useRaceStore((s) => s.setTrack);
+
+  return (
+    <label className="flex items-center gap-1.5">
+      <span className="text-[10px] tracking-[0.12em] text-ink-muted uppercase">
+        Track
+      </span>
+      <select
+        value={trackKey}
+        onChange={(e) => setTrack(e.target.value)}
+        className="rounded border border-pit-border bg-pit-panel px-1.5 py-1 text-[11px] text-ink outline-none hover:border-ink focus:border-ink"
+      >
+        {TRACK_KEYS.map((key) => {
+          const t = getTrack(key);
+          return (
+            <option key={key} value={key}>
+              {t.name} · {(t.lengthM / 1000).toFixed(2)} km
+            </option>
+          );
+        })}
+      </select>
+    </label>
   );
 }
 

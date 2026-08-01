@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { create } from "zustand";
 import { createSimState, SimState, step } from "./simulation";
+import { DEFAULT_TRACK_KEY } from "./track";
 import { Compound, Telemetry } from "./types";
 
 /** Wall-clock tick rate. Matches the 10 Hz phone packet rate. */
@@ -11,6 +12,8 @@ const TICK_MS = 100;
 interface RaceStore {
   sim: SimState;
   telemetry: Telemetry;
+  /** Which of the tracks in /data/tracks the race is running on. */
+  trackKey: string;
   /** 1x is real time; higher values compress the race for demos. */
   speedMultiplier: number;
   running: boolean;
@@ -18,16 +21,18 @@ interface RaceStore {
   setSpeedMultiplier: (m: number) => void;
   toggleRunning: () => void;
   reset: () => void;
+  setTrack: (key: string) => void;
   approveAlert: (id: string, message?: string) => void;
   dismissAlert: (id: string) => void;
   pitStop: (compound: Compound) => void;
 }
 
-const initial = createSimState();
+const initial = createSimState(DEFAULT_TRACK_KEY);
 
 export const useRaceStore = create<RaceStore>((set, get) => ({
   sim: initial,
   telemetry: initial.telemetry,
+  trackKey: DEFAULT_TRACK_KEY,
   speedMultiplier: 4,
   running: true,
 
@@ -45,8 +50,14 @@ export const useRaceStore = create<RaceStore>((set, get) => ({
   toggleRunning: () => set((s) => ({ running: !s.running })),
 
   reset: () => {
-    const fresh = createSimState();
+    const fresh = createSimState(get().trackKey);
     set({ sim: fresh, telemetry: fresh.telemetry, running: true });
+  },
+
+  // Changing track restarts the race — the physics state is track-specific.
+  setTrack: (key) => {
+    const fresh = createSimState(key);
+    set({ sim: fresh, telemetry: fresh.telemetry, trackKey: key, running: true });
   },
 
   approveAlert: (id, message) =>
