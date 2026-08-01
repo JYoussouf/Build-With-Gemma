@@ -173,7 +173,7 @@ function TrackPreview({ run }: { run: RunSummary }) {
       </header>
 
       <div className="min-h-0 flex-1 p-4">
-        <TrackDiagram track={track} className="h-full w-full" />
+        <TrackDiagram track={track} className="h-full w-full" satellite />
       </div>
 
       <footer className="flex shrink-0 flex-wrap gap-x-6 gap-y-1 border-t border-pit-border px-4 py-2.5">
