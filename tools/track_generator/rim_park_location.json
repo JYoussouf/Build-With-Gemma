@@ -1,0 +1,10 @@
+{
+  "name": "RIM Park",
+  "address": "2001 University Ave E, Waterloo, ON N2K 4K4, Canada",
+  "lat": 43.51731,
+  "lon": -80.505752,
+  "lat_dms": "43°31'02.3\"N",
+  "lon_dms": "80°30'20.7\"W",
+  "source": "https://opengovca.com/place/ChIJZcErTVHyK4gRaU6nxEqWWeI",
+  "note": "Address-level geocode for the RIM Park parcel -- matches the pin location in the reference screenshot near the Millennium Blvd loop path. This is the seed coordinate the generated tracks are centred on. For a race-accurate track shape, replace with a live GPS trace captured on-site (see docs/map-technology.md, docs/mobile-app.md Screen 2)."
+}
