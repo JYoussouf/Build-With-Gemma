@@ -15,6 +15,7 @@
  */
 
 import anomalyConfig from "@data/config/anomaly-detection.json";
+import gemmaConfig from "@data/config/gemma.json";
 import compoundConfig from "@data/config/tyre-compounds.json";
 import raceDefaults from "@data/config/race-defaults.json";
 import vehicle from "@data/config/vehicle.json";
@@ -93,6 +94,12 @@ const SEED_WEATHER =
 
 const ANOMALY_TEMPLATES = anomalyConfig.templates;
 
+/** How long Gemma is shown working before its interpretation appears (F4). */
+const INTERPRET_S =
+  (gemmaConfig.interpretation.min_seconds +
+    gemmaConfig.interpretation.max_seconds) /
+  2;
+
 /** Mutable bits the models need across ticks that aren't part of the UI state. */
 interface SimScratch {
   clock: number;
@@ -105,6 +112,10 @@ interface SimScratch {
   lastRuleLap: Record<string, number>;
   nextAnomalyAt: number;
   anomalyCount: number;
+  /** The 2c alert Gemma is currently interpreting, if any. */
+  interpretingId: string | null;
+  interpretingUntil: number;
+  interpretingTemplate: number;
 }
 
 export interface SimState {
@@ -229,6 +240,9 @@ export function createSimState(trackKey: string = DEFAULT_TRACK_KEY): SimState {
       lastRuleLap: {},
       nextAnomalyAt: 45,
       anomalyCount: 0,
+      interpretingId: null,
+      interpretingUntil: 0,
+      interpretingTemplate: 0,
     },
   };
 }
@@ -677,14 +691,26 @@ function latestTierForLap(t: Telemetry, lap: number): AlertTier | undefined {
   return t.alerts.find((a) => a.lap === lap)?.tier;
 }
 
+const PRODUCER: Record<AlertTier, Alert["producer"]> = {
+  "2a": "rule",
+  "2b": "signal",
+  "2c": "model",
+};
+
 function pushAlert(
   t: Telemetry,
   sc: SimScratch,
-  a: Omit<Alert, "id" | "createdAt" | "lap">,
+  a: Omit<Alert, "id" | "createdAt" | "lap" | "producer">,
 ) {
   sc.seq += 1;
   t.alerts = [
-    { ...a, id: `alert-${sc.seq}`, lap: t.lap, createdAt: sc.clock },
+    {
+      ...a,
+      producer: PRODUCER[a.tier],
+      id: `alert-${sc.seq}`,
+      lap: t.lap,
+      createdAt: sc.clock,
+    },
     ...t.alerts,
   ].slice(0, MAX_ALERT_HISTORY);
 }
@@ -783,19 +809,45 @@ function evaluateInstantRules(t: Telemetry, sc: SimScratch) {
 
 /** Tier 2c: TimesFM-style anomaly, queued for engineer approval. */
 function maybeAnomaly(t: Telemetry, sc: SimScratch) {
+  // Phase two: Gemma has finished, so swap the placeholder for its reading.
+  if (sc.interpretingId && sc.clock >= sc.interpretingUntil) {
+    const tpl = ANOMALY_TEMPLATES[sc.interpretingTemplate];
+    const id = sc.interpretingId;
+    t.alerts = t.alerts.map((a) =>
+      a.id === id
+        ? {
+            ...a,
+            interpreting: false,
+            title: tpl.title,
+            message: tpl.interpretation,
+            recommendation: tpl.recommendation,
+          }
+        : a,
+    );
+    sc.interpretingId = null;
+    return;
+  }
+  if (sc.interpretingId) return;
   if (sc.clock < sc.nextAnomalyAt) return;
+
+  // Phase one: TimesFM has flagged the deviation. The channels and sigma are
+  // detector output and are known now; the reading is not.
   sc.nextAnomalyAt = sc.clock + 95 + (sc.anomalyCount % 4) * 18;
-  const tpl = ANOMALY_TEMPLATES[sc.anomalyCount % ANOMALY_TEMPLATES.length];
+  const index = sc.anomalyCount % ANOMALY_TEMPLATES.length;
+  const tpl = ANOMALY_TEMPLATES[index];
   sc.anomalyCount += 1;
+  sc.interpretingTemplate = index;
+  sc.interpretingUntil = sc.clock + INTERPRET_S;
+  sc.interpretingId = `alert-${sc.seq + 1}`;
   pushAlert(t, sc, {
     tier: "2c",
     severity: tpl.severity as Severity,
-    title: tpl.title,
-    message: tpl.interpretation,
-    recommendation: tpl.recommendation,
+    title: "Anomaly detected",
+    message: "",
     channels: tpl.channels,
     sigma: tpl.sigma,
     status: "pending",
+    interpreting: true,
   });
 }
 

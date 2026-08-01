@@ -1,0 +1,35 @@
+{
+  "description": "Identity of the model that interprets anomalies, and the labels the UI shows for it. Feedback round-01 F4 asks for explicit attribution on agent output; Q3 asks that the version string come from the configured model rather than being hardcoded in a component. This file is that single source.",
+  "model": {
+    "id": "gemma-3-27b-it",
+    "display_name": "Gemma 3 27B",
+    "verified": false,
+    "verification_note": "Q3 is unresolved: the walkthrough said 'Gemma 4', which is not a model that has been confirmed here, and no inference call is wired up yet. Until a real client sets this from the model it actually calls, the UI shows the name greyed with an 'unverified' marker rather than asserting a version it cannot back up. Set verified to true once a call site reports this id."
+  },
+  "producers": {
+    "description": "What generates each alert tier (docs/alert-system.md). The alerts panel groups by these, so a viewer can tell model-generated reasoning from a static rule firing — feedback round-01 F5.",
+    "2a": {
+      "label": "Rule engine",
+      "kind": "deterministic",
+      "detail": "Thresholds configured by the engineer",
+      "reaches_driver": "instantly"
+    },
+    "2b": {
+      "label": "Signal detection",
+      "kind": "statistical",
+      "detail": "Pattern match over a rolling window",
+      "reaches_driver": "instantly"
+    },
+    "2c": {
+      "label": "TimesFM + Gemma",
+      "kind": "model",
+      "detail": "TimesFM flags the deviation, Gemma interprets it",
+      "reaches_driver": "after engineer approval"
+    }
+  },
+  "interpretation": {
+    "description": "How long Gemma is shown as thinking before its interpretation appears. docs/alert-system.md puts the real interpret step at 2-5 s; the simulator holds the same window so the in-progress state is visible rather than instantaneous.",
+    "min_seconds": 2.0,
+    "max_seconds": 5.0
+  }
+}

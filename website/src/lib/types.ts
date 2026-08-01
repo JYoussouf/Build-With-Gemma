@@ -7,6 +7,13 @@ export type AlertTier = "2a" | "2b" | "2c";
 
 export type AlertStatus = "pending" | "sent" | "dismissed";
 
+/**
+ * What produced an alert. Tier already implies this, but naming it explicitly
+ * is what lets the panel group model-generated reasoning apart from a static
+ * rule firing (feedback round-01 F4/F5).
+ */
+export type AlertProducer = "rule" | "signal" | "model";
+
 export interface Corners {
   fl: number;
   fr: number;
@@ -76,6 +83,13 @@ export interface Alert {
   title: string;
   message: string;
   status: AlertStatus;
+  producer: AlertProducer;
+  /**
+   * 2c only. True while TimesFM has flagged the deviation but Gemma has not
+   * finished interpreting it, so the panel can show the model working rather
+   * than the card appearing fully formed (F4).
+   */
+  interpreting?: boolean;
   createdAt: number;
   /** 2c only: channels + deviation that triggered the anomaly. */
   channels?: { name: string; sigma: number }[];
