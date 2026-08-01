@@ -6,6 +6,7 @@ import { CentreColumn } from "@/components/dashboard/CentreColumn";
 import { EngineerPanel } from "@/components/dashboard/EngineerPanel";
 import { LeftColumn } from "@/components/dashboard/LeftColumn";
 import { TimingTower } from "@/components/dashboard/TimingTower";
+import manifest from "@data/timeseries/runs.json";
 import { loadRun, ReplayRate } from "@/lib/replay";
 import { useRaceStore } from "@/lib/store";
 
@@ -22,13 +23,13 @@ import { useRaceStore } from "@/lib/store";
  */
 
 interface Props {
-  trackKey: string;
+  runId: string;
   onExit: () => void;
 }
 
 const SPEEDS = [1, 4, 16, 60];
 
-export function ReplayPlayer({ trackKey, onExit }: Props) {
+export function ReplayPlayer({ runId, onExit }: Props) {
   const [rate, setRate] = useState<ReplayRate>("1hz");
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +50,9 @@ export function ReplayPlayer({ trackKey, onExit }: Props) {
     setState("loading");
     setPlaying(false);
 
-    loadRun(trackKey, rate)
+    const archive =
+      manifest.runs.find((r) => r.id === runId)?.archive ?? runId;
+    loadRun(runId, archive, rate)
       .then((run) => {
         if (cancelled) return;
         setTotal(run.frames.length);
@@ -66,7 +69,7 @@ export function ReplayPlayer({ trackKey, onExit }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [trackKey, rate, enterReplay]);
+  }, [runId, rate, enterReplay]);
 
   useEffect(() => () => exitReplay(), [exitReplay]);
 
@@ -116,7 +119,7 @@ export function ReplayPlayer({ trackKey, onExit }: Props) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ReplayBar
-        title={meta?.trackName ?? trackKey}
+        title={meta?.trackName ?? runId}
         clock={frame.t}
         lap={frame.lap}
         totalLaps={meta?.totalLaps ?? 0}
@@ -133,7 +136,7 @@ export function ReplayPlayer({ trackKey, onExit }: Props) {
       />
 
       {/* The Live layout exactly. Only the source differs. */}
-      <main className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(0,30fr)_minmax(0,40fr)_minmax(0,30fr)]">
+      <main className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(0,26fr)_minmax(0,48fr)_minmax(0,26fr)]">
         <LeftColumn />
         <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-3">
           <div className="min-h-0 overflow-hidden">

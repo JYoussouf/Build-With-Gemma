@@ -13,7 +13,7 @@
     },
     {
       "id": "tyre-cliff",
-      "label": "Tyre cliff warning",
+      "label": "Tire cliff warning",
       "detail": "wear > 55%",
       "severity": "high",
       "enabled": true,

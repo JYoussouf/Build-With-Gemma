@@ -21,7 +21,7 @@
         { "name": "brake_temp_fl", "sigma": 3.1 },
         { "name": "tyre_temp_fl", "sigma": 1.8 }
       ],
-      "interpretation": "Left front brake caliper may be sticking. Generating excess heat that is transferring into the tyre.",
+      "interpretation": "Left front brake caliper may be sticking. Generating excess heat that is transferring into the tire.",
       "recommendation": "Reduce braking T1 and T4. Rear bias up two clicks. Monitor two laps, box if no improvement."
     },
     {

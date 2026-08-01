@@ -16,23 +16,23 @@ import { ReplayPlayer } from "@/components/replays/ReplayPlayer";
  */
 type View =
   | { kind: "browse" }
-  | { kind: "replay"; trackKey: string }
-  | { kind: "alerts"; trackKey: string };
+  | { kind: "replay"; runId: string }
+  | { kind: "alerts"; runId: string };
 
 export function ReplaysView() {
   const [view, setView] = useState<View>({ kind: "browse" });
   const browse = () => setView({ kind: "browse" });
 
   if (view.kind === "replay") {
-    return <ReplayPlayer trackKey={view.trackKey} onExit={browse} />;
+    return <ReplayPlayer runId={view.runId} onExit={browse} />;
   }
   if (view.kind === "alerts") {
-    return <AlertLog trackKey={view.trackKey} onExit={browse} />;
+    return <AlertLog runId={view.runId} onExit={browse} />;
   }
   return (
     <PreviousRuns
-      onReplay={(trackKey) => setView({ kind: "replay", trackKey })}
-      onViewAlerts={(trackKey) => setView({ kind: "alerts", trackKey })}
+      onReplay={(runId) => setView({ kind: "replay", runId })}
+      onViewAlerts={(runId) => setView({ kind: "alerts", runId })}
     />
   );
 }

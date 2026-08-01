@@ -10,10 +10,13 @@ const SPEEDS = [1, 4, 16];
 export function TopBar() {
   const t = useSnapshot((f) => f);
   const running = useRaceStore((s) => s.control.running);
+  const driving = useRaceStore((s) => s.control.driving);
   const multiplier = useRaceStore((s) => s.control.speedMultiplier);
   const toggleRunning = useRaceStore((s) => s.toggleRunning);
   const setSpeedMultiplier = useRaceStore((s) => s.setSpeedMultiplier);
   const reset = useRaceStore((s) => s.reset);
+  const startDriving = useRaceStore((s) => s.startDriving);
+  const stopDriving = useRaceStore((s) => s.stopDriving);
 
   return (
     <header className="flex shrink-0 flex-wrap items-center gap-x-5 gap-y-2 border-b border-pit-border bg-pit-panel/60 px-4 py-2">
@@ -25,7 +28,7 @@ export function TopBar() {
       <Field label="Lap" value={`${t.lap} / ${t.totalLaps}`} />
       <Field label="Fuel" value={`${t.fuel.remainingKg.toFixed(1)} kg`} />
       <Field
-        label="Tyres"
+        label="Tires"
         value={`${t.tyres.wearPct.toFixed(0)}% ${COMPOUND_LABEL[t.tyres.compound]}`}
         level={levelFor(t.tyres.wearPct, 45, 62)}
       />
@@ -53,6 +56,20 @@ export function TopBar() {
           ))}
         </div>
         <button
+          onClick={startDriving}
+          disabled={driving}
+          className="rounded border border-status-ok bg-[#0d2a0d] px-2 py-1 text-[11px] text-ink hover:opacity-90 disabled:opacity-40"
+        >
+          Start
+        </button>
+        <button
+          onClick={stopDriving}
+          disabled={!driving}
+          className="rounded border border-status-warn bg-[#2a1d0d] px-2 py-1 text-[11px] text-ink hover:opacity-90 disabled:opacity-40"
+        >
+          Stop
+        </button>
+        <button
           onClick={toggleRunning}
           className="rounded border border-pit-border px-2 py-1 text-[11px] text-ink-secondary hover:text-ink"
         >
@@ -60,7 +77,7 @@ export function TopBar() {
         </button>
         <button
           onClick={reset}
-          className="rounded border border-pit-border px-2 py-1 text-[11px] text-ink-secondary hover:text-ink"
+          className="rounded border border-status-crit px-2 py-1 text-[11px] text-ink-secondary hover:text-ink"
         >
           Reset
         </button>

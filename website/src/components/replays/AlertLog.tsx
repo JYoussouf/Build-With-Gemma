@@ -37,28 +37,28 @@ const OUTCOME: Record<StoredAlert["status"], string> = {
 };
 
 export function AlertLog({
-  trackKey,
+  runId,
   onExit,
 }: {
-  trackKey: string;
+  runId: string;
   onExit: () => void;
 }) {
   const [alerts, setAlerts] = useState<StoredAlert[]>([]);
-  const [name, setName] = useState(trackKey);
+  const [name, setName] = useState(runId);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/runs/${trackKey}`)
+    fetch(`/api/runs/${runId}`)
       .then(async (r) => {
         if (!r.ok) throw new Error((await r.json()).error ?? "run not found");
         return r.json();
       })
       .then((body) => {
         setAlerts(body.alerts);
-        setName(body.meta.track_name);
+        setName(`${body.meta.track_name} · ${body.meta.label ?? ""}`.trim());
       })
       .catch((e: Error) => setError(e.message));
-  }, [trackKey]);
+  }, [runId]);
 
   const grouped = useMemo(() => {
     const by: Record<AlertTier, StoredAlert[]> = { "2a": [], "2b": [], "2c": [] };

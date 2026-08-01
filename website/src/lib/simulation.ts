@@ -768,8 +768,8 @@ function evaluateInstantRules(t: Telemetry, sc: SimScratch) {
     pushAlert(t, sc, {
       tier: "2a",
       severity: "high",
-      title: "Tyre cliff warning",
-      message: `Tyre wear ${t.tyres.wearPct.toFixed(0)}%. Prepare to pit within three laps.`,
+      title: "Tire cliff warning",
+      message: `Tire wear ${t.tyres.wearPct.toFixed(0)}%. Prepare to pit within three laps.`,
       status: "sent",
     });
   }
@@ -799,7 +799,7 @@ function evaluateInstantRules(t: Telemetry, sc: SimScratch) {
     pushAlert(t, sc, {
       tier: "2b",
       severity: "medium",
-      title: "Tyre asymmetry",
+      title: "Tire asymmetry",
       message: `Front axle split ${asymmetry.toFixed(0)}°C. Left front working harder than the right.`,
       status: "sent",
     });
@@ -852,7 +852,7 @@ function maybeAnomaly(t: Telemetry, sc: SimScratch) {
 }
 
 const GEMMA_LINES = [
-  "Tyre wear tracking to plan. Extend to lap 27 — fuel and tyres both support it.",
+  "Tire wear tracking to plan. Extend to lap 27 — fuel and tires both support it.",
   "Pace is stable within a tenth. Push S1, protect the rears through S2.",
   "Fuel margin holding at plus two kilos. No lift and coast needed yet.",
   "Track temp climbing. Expect degradation to steepen over the next five laps.",

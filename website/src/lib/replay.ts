@@ -55,6 +55,12 @@ export interface RunSummary {
   fuel_used_kg: number;
   final_tyre_wear_pct: number;
   alerts_by_tier: Record<string, number>;
+  recorded_at: string;
+  id: string;
+  label: string;
+  /** True when the entry is a placeholder rather than a real recording. */
+  synthetic?: boolean;
+  synthetic_note?: string;
 }
 
 const PRODUCER: Record<AlertTier, Alert["producer"]> = {
@@ -104,11 +110,12 @@ function toLap(l: StoredLap): LapSummary {
 export type ReplayRate = "1hz" | "10hz";
 
 export async function loadRun(
-  trackKey: string,
+  runId: string,
+  archive: string,
   rate: ReplayRate = "1hz",
 ): Promise<ReplayRun> {
   const [detail, telemetry] = await Promise.all([
-    fetch(`/api/runs/${trackKey}`).then(async (r) => {
+    fetch(`/api/runs/${runId}`).then(async (r) => {
       if (!r.ok) throw new Error((await r.json()).error ?? "run not found");
       return r.json() as Promise<{
         meta: RunSummary & { starting_fuel_kg?: number };
@@ -116,10 +123,20 @@ export async function loadRun(
         alerts: StoredAlert[];
       }>;
     }),
-    fetch(`/api/timeseries/${trackKey}/${rate}`).then(async (r) => {
-      if (!r.ok) throw new Error((await r.json()).error ?? "telemetry missing");
-      return r.text();
-    }),
+    // DB races (id starts with "db-") fetch telemetry from the DB API;
+    // archive races read the JSONL files.
+    runId.startsWith("db-")
+      ? fetch(`/api/db/races/${runId.slice(3)}/telemetry?limit=10000`).then(async (r) => {
+          if (!r.ok) throw new Error("telemetry missing from db");
+          const data = await r.json();
+          return (data.frames as TelemetryFrame[])
+            .map((f) => JSON.stringify(f))
+            .join("\n");
+        })
+      : fetch(`/api/timeseries/${archive}/${rate}`).then(async (r) => {
+          if (!r.ok) throw new Error((await r.json()).error ?? "telemetry missing");
+          return r.text();
+        }),
   ]);
 
   const frames = telemetry
@@ -135,7 +152,7 @@ export async function loadRun(
   const fastest = detail.meta.fastest_lap_s ?? laps[0]?.total ?? 0;
 
   return {
-    trackKey,
+    trackKey: detail.meta.track_key,
     trackName: detail.meta.track_name,
     totalLaps: detail.meta.total_laps,
     frames,

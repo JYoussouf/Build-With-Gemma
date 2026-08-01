@@ -19,11 +19,88 @@ const MAX_VISIBLE_PENDING = 2;
 export function EngineerPanel() {
   return (
     <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
+      <RecommendedPit />
       <PendingApprovals />
       <RulesPanel />
       <PatternsPanel />
       <AlertHistory />
     </div>
+  );
+}
+
+function RecommendedPit() {
+  const strategy = useSnapshot((f) => f.strategy);
+  const lap = useSnapshot((f) => f.lap);
+  const tyreWear = useSnapshot((f) => f.tyres.wearPct);
+  const fuelRemaining = useSnapshot((f) => f.fuel.remainingKg);
+  const compound = useSnapshot((f) => f.tyres.compound);
+  const pit = useRaceStore((s) => s.pitStop);
+
+  const [pitWindowStart, pitWindowEnd] = strategy.pitWindow;
+  const pitLap = strategy.stintLap + strategy.stintLength;
+  const inWindow = lap >= pitWindowStart && lap <= pitWindowEnd;
+  const lapsToPit = Math.max(0, pitWindowStart - lap);
+
+  const recommendation = (() => {
+    if (tyreWear > 55) return { urgency: "critical", text: "Tyre wear critical — pit this lap", compound: "hard" as const };
+    if (inWindow) return { urgency: "high", text: "In pit window — box when ready", compound: "hard" as const };
+    if (lapsToPit <= 3) return { urgency: "medium", text: `Pit window opens in ${lapsToPit} lap${lapsToPit === 1 ? "" : "s"}`, compound: "hard" as const };
+    return { urgency: "low", text: `Next pit: lap ${pitLap}`, compound: "hard" as const };
+  })();
+
+  const urgencyColor = {
+    critical: "border-status-crit bg-[#2a0d0d]",
+    high: "border-status-warn bg-[#2a1d0d]",
+    medium: "border-pit-border bg-pit-panel-2",
+    low: "border-pit-border bg-pit-panel-2",
+  }[recommendation.urgency];
+
+  const urgencyDot = {
+    critical: "crit",
+    high: "warn",
+    medium: "warn",
+    low: "ok",
+  }[recommendation.urgency] as "crit" | "warn" | "ok";
+
+  return (
+    <Panel
+      title="Recommended pit"
+      className="shrink-0"
+      action={
+        <span className="tnum text-[11px] text-ink">
+          Lap {lap} / window {pitWindowStart}-{pitWindowEnd}
+        </span>
+      }
+    >
+      <div className={`rounded border p-2.5 ${urgencyColor}`}>
+        <div className="flex items-center gap-1.5">
+          <StatusDot level={urgencyDot} />
+          <span className="text-[11px] tracking-[0.12em] text-ink uppercase">
+            {recommendation.urgency}
+          </span>
+        </div>
+        <p className="mt-1.5 text-[13px] text-ink">{recommendation.text}</p>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-ink-secondary">
+          <span>Tyres: <span className="text-ink">{tyreWear.toFixed(1)}%</span> {compound}</span>
+          <span>Fuel: <span className="text-ink">{fuelRemaining.toFixed(1)} kg</span></span>
+          <span>Suggest: <span className="text-ink">{recommendation.compound}</span></span>
+        </div>
+        <div className="mt-2 flex gap-2">
+          <button
+            onClick={() => pit(recommendation.compound)}
+            className="rounded bg-status-crit px-3 py-1 text-[11px] font-medium text-white hover:opacity-90"
+          >
+            Box now ({recommendation.compound})
+          </button>
+          <button
+            onClick={() => pit("medium")}
+            className="rounded border border-pit-border px-3 py-1 text-[11px] text-ink-secondary hover:bg-pit-panel"
+          >
+            Override (medium)
+          </button>
+        </div>
+      </div>
+    </Panel>
   );
 }
 

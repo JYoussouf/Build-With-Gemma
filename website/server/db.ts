@@ -192,16 +192,51 @@ export async function getAgentMessages(raceId: string): Promise<AgentMessage[]> 
 
 export async function insertAlert(raceId: string, alert: Alert): Promise<void> {
   await query(
-    `INSERT INTO agent_messages (race_id, lap, message_type, message, urgency, data_snapshot)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
+    `INSERT INTO agent_messages (race_id, lap, message_type, message, urgency, data_snapshot, producer, tier, interpreting)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [
       raceId, alert.lap,
-      alert.tier === "2c" ? "warning" : alert.tier === "2b" ? "warning" : "info",
+      alert.tier === "2c" ? "anomaly" : alert.tier === "2b" ? "signal" : "rule",
       alert.message,
       alert.severity,
-      JSON.stringify({ id: alert.id, title: alert.title, tier: alert.tier, channels: alert.channels }),
+      JSON.stringify({ id: alert.id, title: alert.title, tier: alert.tier, channels: alert.channels, sigma: alert.sigma, recommendation: alert.recommendation }),
+      alert.producer ?? "rule",
+      alert.tier,
+      alert.interpreting ?? false,
     ],
   );
+}
+
+// ─── Engineer Decisions (agent-in-the-loop filter) ──────────────────
+
+export async function insertEngineerDecision(
+  raceId: string,
+  alertId: string,
+  lap: number,
+  decision: "approve" | "dismiss" | "modify",
+  originalMessage: string,
+  modifiedMessage: string | null,
+  tier: string,
+  producer: string,
+  channels: unknown,
+  sigma: number | null,
+): Promise<void> {
+  await query(
+    `INSERT INTO engineer_decisions (race_id, alert_id, lap, decision, original_message, modified_message, tier, producer, channels, sigma)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    [
+      raceId, alertId, lap, decision, originalMessage, modifiedMessage,
+      tier, producer, JSON.stringify(channels), sigma,
+    ],
+  );
+}
+
+export async function getEngineerDecisions(raceId: string) {
+  const res = await query(
+    `SELECT * FROM engineer_decisions WHERE race_id = $1 ORDER BY ts`,
+    [raceId],
+  );
+  return res.rows;
 }
 
 // ─── Pit Stops ──────────────────────────────────────────────────────

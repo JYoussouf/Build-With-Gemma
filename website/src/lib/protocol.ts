@@ -85,7 +85,9 @@ export type ServerMessage =
   | { type: "alerts"; alerts: Alert[] }
   | { type: "agentMessages"; agentMessages: AgentMessage[] }
   | { type: "control"; control: ControlState }
-  | { type: "meta"; meta: RaceMeta };
+  | { type: "meta"; meta: RaceMeta }
+  | { type: "trace_point"; point: { lat: number; lon: number; ts: number; speed: number } }
+  | { type: "indicator"; indicator: { kind: string; message: string; urgency: string } };
 
 export type ClientMessage =
   /** Engineer approves a 2c anomaly, optionally rewording it for the driver. */
@@ -98,7 +100,9 @@ export type ClientMessage =
   | { type: "reset" }
   /** Demo affordance: begin streaming as though a driver had set off. */
   | { type: "startDriving" }
-  | { type: "stopDriving" };
+  | { type: "stopDriving" }
+  /** Mobile app sends a GPS trace point during track tracing. */
+  | { type: "trace_point"; lat: number; lon: number; ts: number; speed: number };
 
 /** Where the browser looks for the race server. */
 function getDefaultWsUrl(): string {

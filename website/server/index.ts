@@ -42,6 +42,7 @@ import { DEFAULT_TRACK_KEY, getTrack } from "../src/lib/track";
 import {
   insertAgentMessage,
   insertAlert,
+  insertEngineerDecision,
   insertPitStop,
   insertRace,
   insertTelemetry,
@@ -164,13 +165,31 @@ async function restart(trackKey: string) {
 function handle(message: ClientMessage) {
   switch (message.type) {
     case "approve":
+      const alertToApprove = race.sim.telemetry.alerts.find(a => a.id === message.id);
       race.sim = applyApprove(race.sim, message.id, message.message);
       broadcast({ type: "alerts", alerts: race.sim.telemetry.alerts });
+      if (alertToApprove) {
+        insertEngineerDecision(
+          race.dbId, alertToApprove.id, alertToApprove.lap, "approve",
+          alertToApprove.message, message.message ?? null,
+          alertToApprove.tier, alertToApprove.producer ?? "rule",
+          alertToApprove.channels, alertToApprove.sigma ?? null,
+        ).catch((err) => console.error("DB decision insert failed:", err));
+      }
       break;
 
     case "dismiss":
+      const alertToDismiss = race.sim.telemetry.alerts.find(a => a.id === message.id);
       race.sim = applyDismiss(race.sim, message.id);
       broadcast({ type: "alerts", alerts: race.sim.telemetry.alerts });
+      if (alertToDismiss) {
+        insertEngineerDecision(
+          race.dbId, alertToDismiss.id, alertToDismiss.lap, "dismiss",
+          alertToDismiss.message, null,
+          alertToDismiss.tier, alertToDismiss.producer ?? "rule",
+          alertToDismiss.channels, alertToDismiss.sigma ?? null,
+        ).catch((err) => console.error("DB decision insert failed:", err));
+      }
       break;
 
     case "pit":
@@ -201,8 +220,25 @@ function handle(message: ClientMessage) {
       broadcast({ type: "control", control: race.control });
       break;
 
+    case "startDriving":
+      race.control = { ...race.control, driving: true };
+      broadcast({ type: "control", control: race.control });
+      broadcast({ type: "indicator", indicator: { kind: "start", message: "Race started", urgency: "info" } });
+      break;
+
+    case "stopDriving":
+      race.control = { ...race.control, driving: false };
+      broadcast({ type: "control", control: race.control });
+      broadcast({ type: "indicator", indicator: { kind: "stop", message: "Race stopped", urgency: "warn" } });
+      break;
+
     case "reset":
       restart(race.trackKey);
+      broadcast({ type: "indicator", indicator: { kind: "reset", message: "Race reset", urgency: "info" } });
+      break;
+
+    case "trace_point":
+      broadcast({ type: "trace_point", point: { lat: message.lat, lon: message.lon, ts: message.ts, speed: message.speed } });
       break;
   }
 }
@@ -292,7 +328,7 @@ wss.on("connection", (socket) => {
 // The race advances whether or not anyone is watching, so a client that joins
 // late sees a race in progress rather than one that starts when they arrive.
 setInterval(() => {
-  if (!race.control.running || race.sim.telemetry.status !== "live") return;
+  if (!race.control.driving || !race.control.running || race.sim.telemetry.status !== "live") return;
 
   const before = race.sim.telemetry;
   const dt = (TICK_MS / 1000) * race.control.speedMultiplier;
@@ -316,9 +352,23 @@ setInterval(() => {
   }
   if (after.alerts !== before.alerts) {
     broadcast({ type: "alerts", alerts: after.alerts });
+    // Send indicators to mobile app for new alerts.
+    const newAlerts = after.alerts.filter(
+      (a) => !before.alerts.some((b) => b.id === a.id),
+    );
+    for (const alert of newAlerts) {
+      broadcast({ type: "indicator", indicator: { kind: "alert", message: alert.title, urgency: alert.severity } });
+    }
   }
   if (after.agentMessages !== before.agentMessages) {
     broadcast({ type: "agentMessages", agentMessages: after.agentMessages });
+    // Send indicator for new Gemma messages.
+    const newMsgs = after.agentMessages.filter(
+      (m) => !before.agentMessages.some((b) => b.id === m.id),
+    );
+    for (const msg of newMsgs) {
+      broadcast({ type: "indicator", indicator: { kind: "agent", message: msg.text, urgency: "info" } });
+    }
   }
 
   // When the race finishes, mark it in the database.
@@ -331,7 +381,7 @@ setInterval(() => {
 }, TICK_MS);
 
 async function main() {
-  race = await newRace(DEFAULT_TRACK_KEY, { running: true, speedMultiplier: 4 });
+  race = await newRace(DEFAULT_TRACK_KEY, { driving: false, running: true, speedMultiplier: 4 });
   console.log(
     `race server on ws://localhost:${port}\n` +
       `  track ${race.trackKey}, ${race.sim.telemetry.totalLaps} laps, ` +

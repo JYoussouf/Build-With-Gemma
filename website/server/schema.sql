@@ -263,7 +263,40 @@ CREATE TABLE IF NOT EXISTS agent_messages (
     message_type    VARCHAR(20) NOT NULL,
     message         TEXT NOT NULL,
     data_snapshot   JSONB,
-    urgency         VARCHAR(10) DEFAULT 'normal'
+    urgency         VARCHAR(10) DEFAULT 'normal',
+    producer        VARCHAR(10) DEFAULT 'rule',
+    tier            VARCHAR(5),
+    interpreting    BOOLEAN DEFAULT FALSE
+);
+
+-- =====================================================================
+-- AGENT-IN-THE-LOOP FILTER (engineer decisions as feedback)
+-- =====================================================================
+
+CREATE TABLE IF NOT EXISTS engineer_decisions (
+    id              BIGSERIAL PRIMARY KEY,
+    race_id         UUID REFERENCES races(id),
+    ts              TIMESTAMPTZ DEFAULT now(),
+    alert_id        VARCHAR(50) NOT NULL,
+    lap             INT,
+    decision        VARCHAR(10) NOT NULL,
+    original_message TEXT,
+    modified_message TEXT,
+    tier            VARCHAR(5),
+    producer        VARCHAR(10),
+    channels        JSONB,
+    sigma           FLOAT
+);
+
+CREATE TABLE IF NOT EXISTS suppression_rules (
+    id              SERIAL PRIMARY KEY,
+    race_id         UUID REFERENCES races(id),
+    ts              TIMESTAMPTZ DEFAULT now(),
+    statement       TEXT NOT NULL,
+    predicate       JSONB NOT NULL,
+    action          VARCHAR(20) DEFAULT 'suppress',
+    support_count   INT DEFAULT 0,
+    cited_alert_ids JSONB
 );
 
 -- =====================================================================

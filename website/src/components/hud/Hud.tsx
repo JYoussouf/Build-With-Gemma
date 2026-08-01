@@ -156,7 +156,7 @@ function Gauges() {
         level={t.fuel.lapsRemaining < 3 ? "crit" : t.fuel.lapsRemaining < 6 ? "warn" : "ok"}
       />
       <Gauge
-        label={`Tyres · ${COMPOUND_LABEL[t.tyres.compound]}`}
+        label={`Tires · ${COMPOUND_LABEL[t.tyres.compound]}`}
         value={t.tyres.wearPct}
         max={100}
         display={`${t.tyres.wearPct.toFixed(0)}% worn`}

@@ -11,7 +11,7 @@
     },
     {
       "id": "tyre-asym",
-      "label": "Tyre asymmetry",
+      "label": "Tire asymmetry",
       "detail": "delta > 15°C",
       "enabled": true,
       "params": { "delta_threshold_c": 15 },
