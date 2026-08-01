@@ -57,7 +57,7 @@ const tread: ModelDescriptor = {
   name: "Tread Model",
   kind: `physics · ${HZ} Hz`,
   summary:
-    "Degrades the tyre every tick from how hard the car is being driven. Cornering load dominates, speed and track temperature scale it, and the compound multiplies it. Grip falls away gently with wear until the cliff, past which it drops fast — which is what turns a stint length into a strategy decision.",
+    "Degrades the tire every tick from how hard the car is being driven. Cornering load dominates, speed and track temperature scale it, and the compound multiplies it. Grip falls away gently with wear until the cliff, past which it drops fast — which is what turns a stint length into a strategy decision.",
   implementation: "website/src/lib/simulation.ts:479-490",
   inputs: [
     { name: "lateral_g", unit: "g", note: "Cornering load. The dominant term." },
