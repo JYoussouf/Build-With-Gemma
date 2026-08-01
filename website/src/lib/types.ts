@@ -94,6 +94,13 @@ export interface StrategyState {
 }
 
 export interface Telemetry {
+  /**
+   * Monotonic tick counter. Every field below was produced by this one tick,
+   * so any two values carrying the same `seq` are consistent with each other
+   * (feedback/round-01 D2). Widgets must render from a single snapshot rather
+   * than reading channels independently.
+   */
+  seq: number;
   status: "live" | "paused" | "finished";
   lap: number;
   totalLaps: number;

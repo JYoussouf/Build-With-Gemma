@@ -101,6 +101,7 @@ const corners = (v: number): Corners => ({ fl: v, fr: v, rl: v, rr: v });
 export function createSimState(trackKey: string = DEFAULT_TRACK_KEY): SimState {
   const track = getTrack(trackKey);
   const telemetry: Telemetry = {
+    seq: 0,
     status: "live",
     lap: 1,
     totalLaps: raceDefaults.total_laps,
@@ -121,7 +122,10 @@ export function createSimState(trackKey: string = DEFAULT_TRACK_KEY): SimState {
       compound: raceDefaults.starting_compound as Compound,
       wearPct: 0,
       gripLevel: 1,
-      ageLaps: 0,
+      // Age counts the lap the set is currently running, not the laps it has
+      // finished, so it reads the same as the header's lap number for a set
+      // fitted at the start (feedback/round-01 D2).
+      ageLaps: 1,
       temps: { fl: 82, fr: 84, rl: 79, rr: 80 },
       pressures: {
         fl: vehicle.tyre_pressures_psi.front,
@@ -380,6 +384,7 @@ export function step(sim: SimState, dt: number): SimState {
 
   const next: Telemetry = {
     ...t,
+    seq: t.seq + 1,
     trackPos,
     sector,
     speedKmh,
@@ -444,7 +449,10 @@ export function step(sim: SimState, dt: number): SimState {
     lap = Math.min(t.totalLaps, lap + 1);
     next.lap = lap;
     next.lapTimeS = 0;
-    next.tyres = { ...next.tyres, ageLaps: t.tyres.ageLaps + 1 };
+    // Age advances with the lap counter, never past it. The final lap clamps
+    // `lap`, so an unconditional increment left the tyres a lap older than the
+    // race they were running (feedback/round-01 D2).
+    if (lap > t.lap) next.tyres = { ...next.tyres, ageLaps: t.tyres.ageLaps + 1 };
     next.fuel = {
       ...next.fuel,
       avgPerLapKg: laps.length

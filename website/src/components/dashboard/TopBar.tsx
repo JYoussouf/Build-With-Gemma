@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { COMPOUND_LABEL, levelFor } from "@/lib/format";
-import { useRaceStore } from "@/lib/store";
+import { useRaceStore, useSnapshot } from "@/lib/store";
 import { getTrack, TRACK_KEYS } from "@/lib/track";
 import { StatusDot } from "@/components/ui/Readouts";
 
 const SPEEDS = [1, 4, 16];
 
 export function TopBar() {
-  const t = useRaceStore((s) => s.telemetry);
+  const t = useSnapshot((f) => f);
   const running = useRaceStore((s) => s.running);
   const multiplier = useRaceStore((s) => s.speedMultiplier);
   const toggleRunning = useRaceStore((s) => s.toggleRunning);

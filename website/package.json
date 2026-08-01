@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "generate:data": "npm run build:geometry && tsx scripts/generate-data.ts",
     "validate:data": "tsx scripts/validate-data.ts",
+    "audit:channels": "tsx scripts/audit-channels.ts",
     "build:geometry": "tsx scripts/build-geometry.ts"
   },
   "dependencies": {

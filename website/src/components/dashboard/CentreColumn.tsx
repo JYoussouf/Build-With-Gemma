@@ -3,25 +3,34 @@
 import { Panel } from "@/components/ui/Panel";
 import { Bar, LabeledBar, Metric, StatusDot } from "@/components/ui/Readouts";
 import { levelFor, signed } from "@/lib/format";
-import { useRaceStore } from "@/lib/store";
+import { useRaceStore, useSnapshot } from "@/lib/store";
 import { Corners } from "@/lib/types";
 
+/**
+ * Middle column. Laid out as fixed rows rather than a scrolling stack: the
+ * stack put Brakes below the fold, where the timing tower cut it off
+ * (feedback/round-01 D3). Energy and Brakes now share a row — both are compact
+ * four-corner readouts — so every panel here has a slot that is always fully
+ * visible, and only Strategy's message feed scrolls.
+ */
 export function CentreColumn() {
   return (
-    <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
+    <div className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3">
       <SpeedAndInputs />
-      <ErsPanel />
-      <BrakePanel />
+      <div className="grid gap-3 lg:grid-cols-2">
+        <ErsPanel />
+        <BrakePanel />
+      </div>
       <StrategyPanel />
     </div>
   );
 }
 
 function SpeedAndInputs() {
-  const t = useRaceStore((s) => s.telemetry);
+  const t = useSnapshot((f) => f);
 
   return (
-    <Panel title="Speed & Inputs" className="shrink-0">
+    <Panel title="Speed & Inputs">
       <div className="flex items-end justify-between">
         <div>
           <div className="tnum text-4xl leading-none text-ink">
@@ -87,13 +96,12 @@ function SteeringTrace({ deg }: { deg: number }) {
 }
 
 function ErsPanel() {
-  const ers = useRaceStore((s) => s.telemetry.ers);
+  const ers = useSnapshot((f) => f.ers);
   const socLevel = ers.socPct < 12 ? "crit" : ers.socPct < 30 ? "warn" : "ok";
 
   return (
     <Panel
       title="Energy (ERS)"
-      className="shrink-0"
       action={
         <span className="text-[11px] tracking-[0.1em] text-ink uppercase">{ers.mode}</span>
       }
@@ -164,11 +172,11 @@ function SocSparkline({ history, current }: { history: number[]; current: number
 }
 
 function BrakePanel() {
-  const brakes = useRaceStore((s) => s.telemetry.brakes);
+  const brakes = useSnapshot((f) => f.brakes);
   const keys: (keyof Corners)[] = ["fl", "fr", "rl", "rr"];
 
   return (
-    <Panel title="Brakes" className="shrink-0">
+    <Panel title="Brakes">
       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
         {keys.map((k) => {
           const temp = brakes.temps[k];
@@ -202,13 +210,17 @@ function BrakePanel() {
 }
 
 function StrategyPanel() {
-  const t = useRaceStore((s) => s.telemetry);
+  const t = useSnapshot((f) => f);
   const pitStop = useRaceStore((s) => s.pitStop);
   const s = t.strategy;
   const inWindow = t.lap >= s.pitWindow[0] && t.lap <= s.pitWindow[1];
 
   return (
-    <Panel title="Strategy" className="shrink-0">
+    <Panel
+      title="Strategy"
+      className="min-h-0"
+      bodyClassName="flex min-h-0 flex-col overflow-y-auto"
+    >
       <div className="text-[13px] text-ink">{s.plan}</div>
       <div className="mt-2 grid grid-cols-2 gap-x-4">
         <Metric label="Stint lap" value={`${t.tyres.ageLaps} of ${s.stintLength}`} />
@@ -242,7 +254,7 @@ function StrategyPanel() {
 }
 
 function GemmaFeed() {
-  const messages = useRaceStore((s) => s.telemetry.agentMessages);
+  const messages = useSnapshot((f) => f.agentMessages);
   return (
     <div className="mt-3 rounded border border-pit-border bg-pit-panel-2">
       <div className="border-b border-pit-border px-2.5 py-1.5 text-[10px] tracking-[0.14em] text-ink-secondary uppercase">
