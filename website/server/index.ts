@@ -61,8 +61,14 @@ const port = Number(process.env.RACE_WS_PORT ?? DEFAULT_WS_PORT);
 
 interface Race {
   id: string;
-  /** UUID from the database, so clients can query historical data. */
-  dbId: string;
+  /**
+   * UUID from the database, so clients can query historical data.
+   *
+   * Null when no database is reachable. Persistence is a recording of the
+   * race, not the race itself, so the simulation runs either way and every
+   * write site skips instead of failing.
+   */
+  dbId: string | null;
   trackKey: string;
   sim: SimState;
   control: ControlState;
@@ -77,12 +83,25 @@ interface Race {
 async function newRace(trackKey: string, control: ControlState): Promise<Race> {
   const track = getTrack(trackKey);
   const sim = createSimState(trackKey);
-  const dbId = await insertRace(
-    track.name,
-    sim.telemetry.totalLaps,
-    sim.telemetry.fuel.startKg,
-    sim.telemetry.tyres.compound,
-  );
+  // A missing database must not stop the race server from coming up. Without
+  // this, Postgres being down took the whole pit wall with it: the socket never
+  // opened, and Live sat on "no race server" with no way to start a run.
+  let dbId: string | null = null;
+  try {
+    dbId = await insertRace(
+      track.name,
+      sim.telemetry.totalLaps,
+      sim.telemetry.fuel.startKg,
+      sim.telemetry.tyres.compound,
+    );
+  } catch (err) {
+    // An unreachable Postgres surfaces as an AggregateError whose own message
+    // is empty, so fall back to the code and then to the causes underneath it.
+    const e = err as { message?: string; code?: string; errors?: { message: string }[] };
+    const reason =
+      e.message || e.code || e.errors?.map((c) => c.message).join("; ") || String(err);
+    console.warn(`no database - running the simulation without recording it (${reason})`);
+  }
 
   return {
     id: `race-${trackKey}-${Date.now().toString(36)}`,
@@ -197,9 +216,11 @@ function handle(message: ClientMessage) {
       const lapAtPit = race.sim.telemetry.lap;
       const wearAtPit = race.sim.telemetry.tyres.wearPct;
       race.sim = applyPit(race.sim, message.compound);
-      insertPitStop(race.dbId, lapAtPit, oldCompound, message.compound, wearAtPit).catch(
-        (err) => console.error("DB pit stop insert failed:", err),
-      );
+      if (race.dbId !== null) {
+        insertPitStop(race.dbId, lapAtPit, oldCompound, message.compound, wearAtPit).catch(
+          (err) => console.error("DB pit stop insert failed:", err),
+        );
+      }
       broadcast({
         type: "agentMessages",
         agentMessages: race.sim.telemetry.agentMessages,
@@ -221,15 +242,34 @@ function handle(message: ClientMessage) {
       break;
 
     case "startDriving":
+<<<<<<< HEAD
       race.control = { ...race.control, driving: true };
       broadcast({ type: "control", control: race.control });
       broadcast({ type: "indicator", indicator: { kind: "start", message: "Race started", urgency: "info" } });
+=======
+      // A fresh run each time, so "start driving" never resumes a stale race.
+      if (!race.control.driving) {
+        void newRace(race.trackKey, { ...race.control, driving: true }).then(
+          (fresh) => {
+            race = fresh;
+            broadcast({ type: "meta", meta: metaOf(race) });
+            broadcast({ type: "control", control: race.control });
+            for (const socket of clients) snapshotFor(socket);
+          },
+        );
+      } else {
+        broadcast({ type: "control", control: race.control });
+      }
+>>>>>>> 228fd3f769cb140da7e04e205d2f71b5177e5dae
       break;
 
     case "stopDriving":
       race.control = { ...race.control, driving: false };
       broadcast({ type: "control", control: race.control });
+<<<<<<< HEAD
       broadcast({ type: "indicator", indicator: { kind: "stop", message: "Race stopped", urgency: "warn" } });
+=======
+>>>>>>> 228fd3f769cb140da7e04e205d2f71b5177e5dae
       break;
 
     case "reset":
@@ -246,6 +286,9 @@ function handle(message: ClientMessage) {
 /** Persists a telemetry frame, new laps, new alerts, and new agent messages to PostgreSQL. */
 async function persistTick(before: typeof race.sim.telemetry, after: typeof race.sim.telemetry) {
   race.tickCount++;
+
+  // No database: skip silently rather than log a failure ten times a second.
+  if (race.dbId === null) return;
 
   // Persist telemetry at 1 Hz (every 10 ticks) to keep DB load reasonable.
   if (race.tickCount % PERSIST_EVERY_TICKS === 0) {
@@ -328,7 +371,13 @@ wss.on("connection", (socket) => {
 // The race advances whether or not anyone is watching, so a client that joins
 // late sees a race in progress rather than one that starts when they arrive.
 setInterval(() => {
+<<<<<<< HEAD
   if (!race.control.driving || !race.control.running || race.sim.telemetry.status !== "live") return;
+=======
+  // Nothing to simulate until someone drives.
+  if (!race.control.driving) return;
+  if (!race.control.running || race.sim.telemetry.status !== "live") return;
+>>>>>>> 228fd3f769cb140da7e04e205d2f71b5177e5dae
 
   const before = race.sim.telemetry;
   const dt = (TICK_MS / 1000) * race.control.speedMultiplier;
@@ -374,19 +423,32 @@ setInterval(() => {
   // When the race finishes, mark it in the database.
   if (after.status === "finished" && race.lastPersistedLap !== -1) {
     race.lastPersistedLap = -1;
-    updateRaceStatus(race.dbId, "completed").catch((err) =>
-      console.error("DB race status update failed:", err),
-    );
+    if (race.dbId !== null) {
+      updateRaceStatus(race.dbId, "completed").catch((err) =>
+        console.error("DB race status update failed:", err),
+      );
+    }
   }
 }, TICK_MS);
 
 async function main() {
+<<<<<<< HEAD
   race = await newRace(DEFAULT_TRACK_KEY, { driving: false, running: true, speedMultiplier: 4 });
+=======
+  race = await newRace(DEFAULT_TRACK_KEY, {
+    // Stationary until someone drives. A server that comes up mid-race is the
+    // thing the Live view's stationary state exists to prevent.
+    driving: false,
+    running: true,
+    speedMultiplier: 4,
+  });
+>>>>>>> 228fd3f769cb140da7e04e205d2f71b5177e5dae
   console.log(
     `race server on ws://localhost:${port}\n` +
       `  track ${race.trackKey}, ${race.sim.telemetry.totalLaps} laps, ` +
       `${race.control.speedMultiplier}x speed\n` +
-      `  db race id: ${race.dbId}`,
+      `  db race id: ${race.dbId ?? "none (not recording)"}\n` +
+      `  vehicle stationary — waiting for a driver`,
   );
 }
 

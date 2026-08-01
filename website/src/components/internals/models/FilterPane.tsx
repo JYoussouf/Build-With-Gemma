@@ -6,7 +6,6 @@ import {
   Decision,
   FilterRule,
   renderPrompt,
-  SUPPORT_THRESHOLD,
   SuppressionPreview,
 } from "@/lib/models/filter";
 
