@@ -1,0 +1,46 @@
+{
+  "description": "The recorded runs, and which archive each one reads. A run has its own identity because a circuit accumulates runs rather than having one: `archive` is the directory its telemetry comes from, so several runs can share a recording.",
+  "runs": [
+    {
+      "id": "grand-01",
+      "track_key": "grand",
+      "archive": "grand",
+      "label": "Race 1",
+      "recorded_at": "2026-08-01T12:46:47Z"
+    },
+    {
+      "id": "grand-02",
+      "track_key": "grand",
+      "archive": "grand",
+      "label": "Race 2",
+      "recorded_at": "2026-08-01T15:12:03Z",
+      "synthetic": true,
+      "synthetic_note": "Placeholder for demonstrating more than one run per circuit. Its telemetry is the grand archive replayed again, and the summary figures below are made up. Marked so nothing here is mistaken for a second real recording; delete it once a genuine second run exists.",
+      "overrides": {
+        "fastest_lap_s": 63.679,
+        "duration_s": 3653,
+        "fuel_used_kg": 39.7,
+        "final_tyre_wear_pct": 48.4,
+        "alerts_by_tier": {
+          "2a": 12,
+          "2b": 18,
+          "2c": 26
+        }
+      }
+    },
+    {
+      "id": "sprint-01",
+      "track_key": "sprint",
+      "archive": "sprint",
+      "label": "Race 1",
+      "recorded_at": "2026-08-01T12:46:46Z"
+    },
+    {
+      "id": "club-01",
+      "track_key": "club",
+      "archive": "club",
+      "label": "Race 1",
+      "recorded_at": "2026-08-01T12:46:47Z"
+    }
+  ]
+}

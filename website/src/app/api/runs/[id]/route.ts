@@ -1,5 +1,8 @@
 /**
- * One recorded race: its summary, every lap, and every alert that fired.
+ * One recorded run: its summary, every lap, and every alert that fired.
+ *
+ * Resolved through the manifest, since a run id is not a track key and two
+ * runs can read the same archive.
  *
  * Deliberately a separate endpoint from anything the live race uses. A
  * recorded alert is a record of what fired during that race — it is not a
@@ -9,33 +12,35 @@
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import trackIndex from "@data/tracks/index.json";
+import manifest from "@data/timeseries/runs.json";
 
-const TRACK_KEYS = new Set(trackIndex.tracks.map((t) => t.key));
 const DATA = join(process.cwd(), "..", "data");
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ track: string }> },
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const { track } = await params;
+  const { id } = await params;
 
-  // Checked against a fixed set before any path is built, so a crafted
-  // segment cannot escape data/timeseries.
-  if (!TRACK_KEYS.has(track)) {
-    return Response.json({ error: `unknown run: ${track}` }, { status: 404 });
+  // Resolved against a fixed list before any path is built, so a crafted id
+  // cannot escape data/timeseries.
+  const entry = manifest.runs.find((r) => r.id === id);
+  if (!entry) {
+    return Response.json({ error: `unknown run: ${id}` }, { status: 404 });
   }
 
-  const dir = join(DATA, "timeseries", track);
+  const dir = join(DATA, "timeseries", entry.archive);
   try {
     const [meta, laps, alerts] = await Promise.all([
       readFile(join(dir, "meta.json"), "utf8"),
       readFile(join(dir, "laps.json"), "utf8"),
       readFile(join(dir, "alerts.json"), "utf8"),
     ]);
+    const overrides =
+      "overrides" in entry ? (entry.overrides as Record<string, unknown>) : {};
     return Response.json(
       {
-        meta: JSON.parse(meta),
+        meta: { ...JSON.parse(meta), ...overrides, id: entry.id, label: entry.label },
         laps: JSON.parse(laps),
         alerts: JSON.parse(alerts),
       },
@@ -43,7 +48,7 @@ export async function GET(
     );
   } catch {
     return Response.json(
-      { error: `no archive for ${track} - run npm run generate:data` },
+      { error: `no archive for ${id} - run npm run generate:data` },
       { status: 404 },
     );
   }
