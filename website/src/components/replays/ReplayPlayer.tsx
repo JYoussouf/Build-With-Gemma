@@ -133,7 +133,7 @@ export function ReplayPlayer({ trackKey, onExit }: Props) {
       />
 
       {/* The Live layout exactly. Only the source differs. */}
-      <main className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(0,30fr)_minmax(0,40fr)_minmax(0,30fr)]">
+      <main className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(0,26fr)_minmax(0,48fr)_minmax(0,26fr)]">
         <LeftColumn />
         <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-3">
           <div className="min-h-0 overflow-hidden">
