@@ -201,6 +201,27 @@ function handle(message: ClientMessage) {
       broadcast({ type: "control", control: race.control });
       break;
 
+    case "startDriving":
+      // A fresh run each time, so "start driving" never resumes a stale race.
+      if (!race.control.driving) {
+        void newRace(race.trackKey, { ...race.control, driving: true }).then(
+          (fresh) => {
+            race = fresh;
+            broadcast({ type: "meta", meta: metaOf(race) });
+            broadcast({ type: "control", control: race.control });
+            for (const socket of clients) snapshotFor(socket);
+          },
+        );
+      } else {
+        broadcast({ type: "control", control: race.control });
+      }
+      break;
+
+    case "stopDriving":
+      race.control = { ...race.control, driving: false };
+      broadcast({ type: "control", control: race.control });
+      break;
+
     case "reset":
       restart(race.trackKey);
       break;
@@ -292,6 +313,8 @@ wss.on("connection", (socket) => {
 // The race advances whether or not anyone is watching, so a client that joins
 // late sees a race in progress rather than one that starts when they arrive.
 setInterval(() => {
+  // Nothing to simulate until someone drives.
+  if (!race.control.driving) return;
   if (!race.control.running || race.sim.telemetry.status !== "live") return;
 
   const before = race.sim.telemetry;
@@ -331,12 +354,19 @@ setInterval(() => {
 }, TICK_MS);
 
 async function main() {
-  race = await newRace(DEFAULT_TRACK_KEY, { running: true, speedMultiplier: 4 });
+  race = await newRace(DEFAULT_TRACK_KEY, {
+    // Stationary until someone drives. A server that comes up mid-race is the
+    // thing the Live view's stationary state exists to prevent.
+    driving: false,
+    running: true,
+    speedMultiplier: 4,
+  });
   console.log(
     `race server on ws://localhost:${port}\n` +
       `  track ${race.trackKey}, ${race.sim.telemetry.totalLaps} laps, ` +
       `${race.control.speedMultiplier}x speed\n` +
-      `  db race id: ${race.dbId}`,
+      `  db race id: ${race.dbId}\n` +
+      `  vehicle stationary — waiting for a driver`,
   );
 }
 
