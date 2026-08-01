@@ -32,6 +32,25 @@ packets in `/data/samples` replay a real lap without a backend, and
 `/data/timeseries` has full simulated races for testing the HUD against
 realistic input.
 
+## Talking to the race server
+
+The website's race server (`website/server/index.ts`) already speaks the
+protocol the app needs, so the HUD can be wired up before any Python exists:
+
+```
+ws://<host>:4000
+```
+
+`website/src/lib/protocol.ts` is the message contract. The app subscribes,
+renders `frame` messages, and sends `pit` when the driver boxes. Telemetry
+arrives in the canonical snake_case shape from
+`/data/schema/telemetry-frame.schema.json`, so generated Dart models fit it
+directly.
+
+Alerts reach the driver only once an engineer has approved them, which is the
+whole point of the 2c tier — the app renders what it is sent and does not
+decide.
+
 ## Planned structure
 
 ```

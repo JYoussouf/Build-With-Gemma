@@ -17,10 +17,12 @@ Real-time, on-edge racing intelligence that syncs alerts between racer and engin
 ```bash
 cd website
 npm install
-npm run dev
+npm run dev:all
 ```
 
 Then open [localhost:3000/dashboard](http://localhost:3000/dashboard) for the pit wall
 and [localhost:3000/hud](http://localhost:3000/hud) for the driver HUD.
-Both run against a client-side telemetry simulator, so no backend is needed yet.
+`dev:all` starts both the race server (`ws://localhost:4000`) and the web app.
+The server owns the race and pushes to every client, so the two views show the
+same one: approve an anomaly on the pit wall and it appears on the HUD.
 See [`website/README.md`](website/README.md) for what the simulator models and where the real backend plugs in.

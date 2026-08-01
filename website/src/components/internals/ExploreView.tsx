@@ -13,16 +13,17 @@ import {
   useReplaySource,
 } from "@/lib/explore/source";
 import { ScaleMode, windowFrames, WINDOWS } from "@/lib/explore/series";
-import { useRaceClock, useRaceStore } from "@/lib/store";
+import { useRaceConnection, useRaceStore } from "@/lib/store";
 import { getTrack, TRACK_KEYS } from "@/lib/track";
 
 /** Channels selected on first load: one from each tier, to show the idea. */
 const DEFAULT_SELECTION = ["speed_kmh", "throttle_pct", "tyres.wear_pct"];
 
 export function ExploreView() {
-  // Drives the simulation for the LIVE source. This is the same hook the
-  // dashboard mounts, not an extra clock.
-  useRaceClock();
+  // Feeds the LIVE source. Deliberately the bare connection rather than
+  // <RaceGate>: REPLAY reads off disk and must keep working when no race
+  // server is running.
+  useRaceConnection();
 
   const [kind, setKind] = useState<"live" | "replay">("live");
   const [rate, setRate] = useState<Rate>("10hz");

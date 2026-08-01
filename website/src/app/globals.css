@@ -96,3 +96,18 @@ body {
     animation: none;
   }
 }
+
+/*
+  Replay chrome. Historical archives must never read as live telemetry, so
+  they carry a hatched surface and a dashed edge that nothing live uses.
+  Greyscale only, per the palette rules above.
+*/
+.replay-hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.035) 0px,
+    rgba(255, 255, 255, 0.035) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}

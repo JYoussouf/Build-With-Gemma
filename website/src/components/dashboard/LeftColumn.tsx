@@ -3,7 +3,7 @@
 import { Panel } from "@/components/ui/Panel";
 import { Bar, LabeledBar, Metric, StatusDot } from "@/components/ui/Readouts";
 import { COMPOUND_COLOR, COMPOUND_LABEL, levelFor } from "@/lib/format";
-import { useRaceStore } from "@/lib/store";
+import { useTelemetry } from "@/lib/store";
 import { Corners } from "@/lib/types";
 import { TrackMap } from "./TrackMap";
 
@@ -21,7 +21,7 @@ export function LeftColumn() {
 }
 
 function TyrePanel() {
-  const tyres = useRaceStore((s) => s.telemetry.tyres);
+  const tyres = useTelemetry((t) => t.tyres);
   const wearLevel = levelFor(tyres.wearPct, 45, 62);
 
   return (
@@ -82,7 +82,7 @@ function CornerGrid({ temps, pressures }: { temps: Corners; pressures: Corners }
 }
 
 function FuelPanel() {
-  const fuel = useRaceStore((s) => s.telemetry.fuel);
+  const fuel = useTelemetry((t) => t.fuel);
   const onTarget = fuel.avgPerLapKg <= fuel.targetPerLapKg * 1.02;
 
   return (
@@ -108,7 +108,7 @@ function FuelPanel() {
 }
 
 function WeatherPanel() {
-  const w = useRaceStore((s) => s.telemetry.weather);
+  const w = useTelemetry((t) => t.weather);
   return (
     <Panel title="Weather" className="shrink-0">
       <Metric label="Air" value={w.airTempC.toFixed(1)} unit="°C" />

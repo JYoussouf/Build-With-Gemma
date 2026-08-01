@@ -1,9 +1,12 @@
 "use client";
 
 import { Hud } from "@/components/hud/Hud";
-import { useRaceClock } from "@/lib/store";
+import { RaceGate } from "@/components/RaceGate";
 
 export function HudScreen() {
-  useRaceClock();
-  return <Hud />;
+  return (
+    <RaceGate>
+      <Hud />
+    </RaceGate>
+  );
 }

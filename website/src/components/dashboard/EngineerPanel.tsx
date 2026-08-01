@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Panel } from "@/components/ui/Panel";
 import { StatusDot } from "@/components/ui/Readouts";
 import { severityLevel } from "@/lib/format";
-import { useRaceStore } from "@/lib/store";
+import { useRaceStore, useTelemetry } from "@/lib/store";
 import { Alert } from "@/lib/types";
 
 /** Beyond this, the queue is summarised so the rules below stay reachable. */
@@ -23,7 +23,7 @@ export function EngineerPanel() {
 }
 
 function PendingApprovals() {
-  const alerts = useRaceStore((s) => s.telemetry.alerts);
+  const alerts = useTelemetry((t) => t.alerts);
   const pending = useMemo(
     () => alerts.filter((a) => a.tier === "2c" && a.status === "pending"),
     [alerts],
@@ -238,7 +238,7 @@ const STATUS_LABEL = {
 } as const;
 
 function AlertHistory() {
-  const alerts = useRaceStore((s) => s.telemetry.alerts);
+  const alerts = useTelemetry((t) => t.alerts);
   return (
     <Panel title="Alert history" className="min-h-[180px] flex-1" bodyClassName="overflow-y-auto">
       {alerts.length === 0 ? (

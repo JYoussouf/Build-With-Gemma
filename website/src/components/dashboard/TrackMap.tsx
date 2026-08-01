@@ -1,6 +1,6 @@
 "use client";
 
-import { useRaceStore } from "@/lib/store";
+import { useRaceStore, useTelemetry } from "@/lib/store";
 import { getTrack, pointAt } from "@/lib/track";
 
 /**
@@ -11,8 +11,8 @@ import { getTrack, pointAt } from "@/lib/track";
  */
 export function TrackMap() {
   const trackKey = useRaceStore((s) => s.trackKey);
-  const trackPos = useRaceStore((s) => s.telemetry.trackPos);
-  const sector = useRaceStore((s) => s.telemetry.sector);
+  const trackPos = useTelemetry((t) => t.trackPos);
+  const sector = useTelemetry((t) => t.sector);
 
   const track = getTrack(trackKey);
   const car = pointAt(track, trackPos);

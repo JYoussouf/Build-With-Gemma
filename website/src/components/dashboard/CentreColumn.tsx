@@ -3,12 +3,14 @@
 import { Panel } from "@/components/ui/Panel";
 import { Bar, LabeledBar, Metric, StatusDot } from "@/components/ui/Readouts";
 import { levelFor, signed } from "@/lib/format";
-import { useRaceStore } from "@/lib/store";
+import { useRaceStore, useTelemetry } from "@/lib/store";
 import { Corners } from "@/lib/types";
 
 export function CentreColumn() {
+  // pb-12 keeps the last panel clear of the collapsed history bar, which
+  // floats at the bottom of this column.
   return (
-    <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
+    <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1 pb-12">
       <SpeedAndInputs />
       <ErsPanel />
       <BrakePanel />
@@ -18,7 +20,7 @@ export function CentreColumn() {
 }
 
 function SpeedAndInputs() {
-  const t = useRaceStore((s) => s.telemetry);
+  const t = useTelemetry((t) => t);
 
   return (
     <Panel title="Speed & Inputs" className="shrink-0">
@@ -87,7 +89,7 @@ function SteeringTrace({ deg }: { deg: number }) {
 }
 
 function ErsPanel() {
-  const ers = useRaceStore((s) => s.telemetry.ers);
+  const ers = useTelemetry((t) => t.ers);
   const socLevel = ers.socPct < 12 ? "crit" : ers.socPct < 30 ? "warn" : "ok";
 
   return (
@@ -164,7 +166,7 @@ function SocSparkline({ history, current }: { history: number[]; current: number
 }
 
 function BrakePanel() {
-  const brakes = useRaceStore((s) => s.telemetry.brakes);
+  const brakes = useTelemetry((t) => t.brakes);
   const keys: (keyof Corners)[] = ["fl", "fr", "rl", "rr"];
 
   return (
@@ -202,7 +204,7 @@ function BrakePanel() {
 }
 
 function StrategyPanel() {
-  const t = useRaceStore((s) => s.telemetry);
+  const t = useTelemetry((t) => t);
   const pitStop = useRaceStore((s) => s.pitStop);
   const s = t.strategy;
   const inWindow = t.lap >= s.pitWindow[0] && t.lap <= s.pitWindow[1];
@@ -242,7 +244,7 @@ function StrategyPanel() {
 }
 
 function GemmaFeed() {
-  const messages = useRaceStore((s) => s.telemetry.agentMessages);
+  const messages = useTelemetry((t) => t.agentMessages);
   return (
     <div className="mt-3 rounded border border-pit-border bg-pit-panel-2">
       <div className="border-b border-pit-border px-2.5 py-1.5 text-[10px] tracking-[0.14em] text-ink-secondary uppercase">

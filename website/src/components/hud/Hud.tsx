@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { Bar, StatusDot } from "@/components/ui/Readouts";
 import { COMPOUND_LABEL, levelFor, severityLevel, signed } from "@/lib/format";
-import { useRaceStore } from "@/lib/store";
+import { useRaceStore, useTelemetry } from "@/lib/store";
 import { Alert } from "@/lib/types";
 
 /**
@@ -13,7 +13,7 @@ import { Alert } from "@/lib/types";
  * sized to be read in under half a second. Phone-width by design.
  */
 export function Hud() {
-  const t = useRaceStore((s) => s.telemetry);
+  const t = useTelemetry((t) => t);
   const sent = useMemo(
     () => t.alerts.filter((a) => a.status === "sent"),
     [t.alerts],
@@ -84,7 +84,7 @@ export function Hud() {
 }
 
 function SpeedBlock() {
-  const t = useRaceStore((s) => s.telemetry);
+  const t = useTelemetry((t) => t);
   const onPace = t.deltaToTargetS <= 0;
 
   return (
@@ -142,7 +142,7 @@ function AlertCard({ alert }: { alert: Alert }) {
 }
 
 function Gauges() {
-  const t = useRaceStore((s) => s.telemetry);
+  const t = useTelemetry((t) => t);
   const hottestBrake = Math.max(
     t.brakes.temps.fl,
     t.brakes.temps.fr,
@@ -218,7 +218,7 @@ function Gauge({
 
 function PitStrip() {
   const pitStop = useRaceStore((s) => s.pitStop);
-  const stintLap = useRaceStore((s) => s.telemetry.tyres.ageLaps);
+  const stintLap = useTelemetry((t) => t.tyres.ageLaps);
   const inOutLap = stintLap <= 2;
 
   return (

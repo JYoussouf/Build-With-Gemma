@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { centerFor, TelemetryFrame, toFrame } from "../frame";
+import { TelemetryFrame } from "../frame";
 import { useRaceStore } from "../store";
 
 export type SourceKind = "live" | "replay";
@@ -45,19 +45,20 @@ const LIVE_BUFFER = 3000;
 export const SPEEDS = [1, 4, 16];
 
 /**
- * Follows the running simulation.
+ * Follows the running race.
  *
- * This does not start a clock. `useRaceClock` remains the only thing stepping
- * the simulation, so the explore view and the dashboard always show the same
- * race at the same moment. Transport controls delegate to the store, which is
- * why pausing here pauses there too.
+ * This opens no connection of its own — `<RaceGate>` owns the socket, and this
+ * only accumulates the frames the server pushes, so the explore view and the
+ * dashboard always show the same race at the same moment. Transport controls
+ * are requests to the server, which is why pausing here pauses it for every
+ * connected client, not just this tab.
  */
 export function useLiveSource(): FrameSource {
   const buffer = useRef<TelemetryFrame[]>([]);
   const [frames, setFrames] = useState<TelemetryFrame[]>([]);
 
-  const running = useRaceStore((s) => s.running);
-  const speed = useRaceStore((s) => s.speedMultiplier);
+  const running = useRaceStore((s) => s.control.running);
+  const speed = useRaceStore((s) => s.control.speedMultiplier);
   const setSpeed = useRaceStore((s) => s.setSpeedMultiplier);
   const toggleRunning = useRaceStore((s) => s.toggleRunning);
   const trackKey = useRaceStore((s) => s.trackKey);
@@ -70,14 +71,8 @@ export function useLiveSource(): FrameSource {
 
   useEffect(() => {
     const unsubscribe = useRaceStore.subscribe((state, prev) => {
-      if (state.sim === prev.sim) return;
-      const { sim, trackKey: key } = state;
-      const frame = toFrame(
-        sim.telemetry,
-        sim.scratch.clock,
-        sim.track,
-        centerFor(key),
-      );
+      const frame = state.frame;
+      if (!frame || frame === prev.frame) return;
       // A reset rewinds the clock; drop the stale tail rather than drawing a
       // line backwards through time.
       const last = buffer.current[buffer.current.length - 1];
@@ -93,7 +88,7 @@ export function useLiveSource(): FrameSource {
 
   const setPlaying = useCallback(
     (next: boolean) => {
-      if (next !== useRaceStore.getState().running) toggleRunning();
+      if (next !== useRaceStore.getState().control.running) toggleRunning();
     },
     [toggleRunning],
   );

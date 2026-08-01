@@ -11,6 +11,7 @@
  */
 
 import trackIndex from "@data/tracks/index.json";
+import vehicle from "@data/config/vehicle.json";
 import { pointAt, Track } from "./track";
 import { Compound, Telemetry } from "./types";
 
@@ -103,6 +104,93 @@ export function toLatLon(x: number, y: number, center: LatLon): LatLon {
     lon:
       center.lon +
       x / (M_PER_DEG_LON * Math.cos((center.lat * Math.PI) / 180)),
+  };
+}
+
+/** The physics slice of `Telemetry` that a frame can reconstruct. */
+export type FramePhysics = Omit<
+  Telemetry,
+  | "status"
+  | "totalLaps"
+  | "lastLapS"
+  | "deltaToTargetS"
+  | "strategy"
+  | "laps"
+  | "alerts"
+  | "agentMessages"
+>;
+
+/**
+ * The two values the physics slice needs that a frame does not carry: the
+ * fuel target is calibrated per race, and SOC history is a per-lap series.
+ * Both arrive alongside the frame in the protocol's `LiveExtras`.
+ */
+export interface FrameContext {
+  fuelTargetPerLapKg: number;
+  socHistory: number[];
+}
+
+/**
+ * Unpacks a frame back into the camelCase shape the components read.
+ *
+ * The inverse of `toFrame` for every field a frame carries. Rounding is not
+ * reversed — frames are the canonical record, so what the pit wall renders is
+ * exactly what a replay off disk would show.
+ *
+ * Fields a frame does not carry (laps, alerts, strategy, agent messages)
+ * arrive as their own protocol messages and are merged by the store.
+ */
+export function fromFrame(f: TelemetryFrame, ctx: FrameContext): FramePhysics {
+  return {
+    lap: f.lap,
+    lapTimeS: f.lap_time_s,
+    trackPos: f.track_pos,
+    sector: f.sector,
+    speedKmh: f.speed_kmh,
+    rpm: f.rpm,
+    gear: f.gear,
+    throttlePct: f.throttle_pct,
+    brakePct: f.brake_pct,
+    steeringDeg: f.steering_deg,
+    lateralG: f.lateral_g,
+    longitudinalG: f.longitudinal_g,
+    tyres: {
+      compound: f.tyres.compound,
+      wearPct: f.tyres.wear_pct,
+      gripLevel: f.tyres.grip_level,
+      ageLaps: f.tyres.age_laps,
+      temps: { ...f.tyres.temps_c },
+      pressures: { ...f.tyres.pressures_psi },
+    },
+    fuel: {
+      remainingKg: f.fuel.remaining_kg,
+      capacityKg: vehicle.fuel.capacity_kg,
+      flowRateKgH: f.fuel.flow_rate_kg_h,
+      avgPerLapKg: f.fuel.avg_per_lap_kg,
+      targetPerLapKg: ctx.fuelTargetPerLapKg,
+      lapsRemaining: f.fuel.laps_remaining,
+    },
+    ers: {
+      socPct: f.ers.soc_pct,
+      mode: f.ers.mode,
+      powerKw: f.ers.power_kw,
+      harvestedMj: f.ers.harvested_mj,
+      deployedMj: f.ers.deployed_mj,
+      socHistory: ctx.socHistory,
+    },
+    brakes: {
+      temps: { ...f.brakes.temps_c },
+      padPct: f.brakes.pad_pct,
+      fade: f.brakes.fade,
+    },
+    weather: {
+      airTempC: f.weather.air_temp_c,
+      trackTempC: f.weather.track_temp_c,
+      windKmh: f.weather.wind_kmh,
+      windDir: f.weather.wind_dir,
+      rainMmH: f.weather.rain_mm_h,
+      condition: f.weather.condition,
+    },
   };
 }
 
