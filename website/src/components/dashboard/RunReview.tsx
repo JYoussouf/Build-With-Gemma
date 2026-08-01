@@ -6,7 +6,11 @@ import { Rate, SPEEDS, useReplaySource } from "@/lib/explore/source";
 import { lapTime } from "@/lib/format";
 
 /**
- * Historical runs, docked under the live telemetry.
+ * The recorded-run review, used by the Replays tab.
+ *
+ * This began as a drawer docked under the live telemetry. Replays is now its
+ * own tab, so the drawer shell is gone and these are the review panes it left
+ * behind — `RunReview` and the panels below it.
  *
  * Isolation is the point. This component touches `useRaceStore` nowhere: a
  * replayed frame cannot reach the alert rules, the anomaly approval queue, or
@@ -19,7 +23,7 @@ import { lapTime } from "@/lib/format";
  * nobody glancing at the pit wall mistakes a recording for the car on track.
  */
 
-interface RunMeta {
+export interface RunMeta {
   track_key: string;
   track_name: string;
   total_laps: number;
@@ -59,112 +63,7 @@ const RATES: { key: Rate; label: string; coverage: string }[] = [
   { key: "10hz", label: "10 Hz", coverage: "first 3 laps" },
 ];
 
-export function HistoryDrawer() {
-  const [open, setOpen] = useState(false);
-  const [runs, setRuns] = useState<RunMeta[]>([]);
-  const [selected, setSelected] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/runs")
-      .then((r) => r.json())
-      .then((body: { runs: RunMeta[] }) => {
-        setRuns(body.runs);
-        setSelected((current) => current ?? body.runs[0]?.track_key ?? null);
-      })
-      .catch(() => setRuns([]));
-  }, []);
-
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="replay-hatch flex shrink-0 items-center gap-3 rounded-md border border-dashed border-pit-border bg-pit-black px-3 py-2 text-left hover:border-ink-secondary"
-      >
-        <span className="text-[11px] tracking-[0.16em] text-ink-secondary uppercase">
-          Historical runs
-        </span>
-        <span className="tnum text-[11px] text-ink-muted">
-          {runs.length
-            ? `${runs.length} recorded · ${runs.reduce((n, r) => n + r.total_laps, 0)} laps`
-            : "loading"}
-        </span>
-        <span className="ml-auto text-[11px] text-ink-secondary">Expand ▲</span>
-      </button>
-    );
-  }
-
-  return (
-    <section
-      className="absolute inset-0 z-10 flex flex-col rounded-md border border-dashed border-ink-muted bg-pit-black shadow-[0_-12px_32px_rgba(0,0,0,0.8)]"
-      aria-label="Historical runs, recorded archive"
-    >
-      <Header
-        runs={runs}
-        selected={selected}
-        onSelect={setSelected}
-        onClose={() => setOpen(false)}
-      />
-      {selected ? (
-        <RunReview trackKey={selected} />
-      ) : (
-        <p className="p-4 text-[12px] text-ink-muted">
-          No recorded runs. Generate them with{" "}
-          <code className="text-ink-secondary">npm run generate:data</code>.
-        </p>
-      )}
-    </section>
-  );
-}
-
-function Header({
-  runs,
-  selected,
-  onSelect,
-  onClose,
-}: {
-  runs: RunMeta[];
-  selected: string | null;
-  onSelect: (key: string) => void;
-  onClose: () => void;
-}) {
-  return (
-    <header className="replay-hatch flex shrink-0 items-center gap-3 border-b border-dashed border-ink-muted px-3 py-2">
-      {/* A square, not the round live status light. Different shape reads as a
-          different kind of thing even before the label is read. */}
-      <span aria-hidden className="size-2 shrink-0 bg-ink-secondary" />
-      <span className="text-[11px] font-medium tracking-[0.18em] text-ink uppercase">
-        Replay
-      </span>
-      <span className="text-[11px] text-ink-muted">recorded archive</span>
-
-      <label className="ml-3 flex items-center gap-1.5">
-        <span className="text-[10px] tracking-[0.12em] text-ink-muted uppercase">
-          Run
-        </span>
-        <select
-          value={selected ?? ""}
-          onChange={(e) => onSelect(e.target.value)}
-          className="rounded border border-pit-border bg-pit-panel px-1.5 py-1 text-[11px] text-ink outline-none hover:border-ink focus:border-ink"
-        >
-          {runs.map((r) => (
-            <option key={r.track_key} value={r.track_key}>
-              {r.track_name} · {r.total_laps} laps
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <button
-        onClick={onClose}
-        className="ml-auto rounded border border-pit-border px-2 py-1 text-[11px] text-ink-secondary hover:text-ink"
-      >
-        Collapse ▼
-      </button>
-    </header>
-  );
-}
-
-function RunReview({ trackKey }: { trackKey: string }) {
+export function RunReview({ trackKey }: { trackKey: string }) {
   const [rate, setRate] = useState<Rate>("1hz");
   const [detail, setDetail] = useState<RunDetail | null>(null);
   const [error, setError] = useState<string | null>(null);

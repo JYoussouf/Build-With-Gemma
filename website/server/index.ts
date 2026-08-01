@@ -67,7 +67,13 @@ function newRace(trackKey: string, control: ControlState): Race {
   };
 }
 
-let race = newRace(DEFAULT_TRACK_KEY, { running: true, speedMultiplier: 4 });
+// Starts stationary. A real deployment has no telemetry until a driver sets
+// off, and showing a race already in progress on load was the dishonest part.
+let race = newRace(DEFAULT_TRACK_KEY, {
+  driving: false,
+  running: true,
+  speedMultiplier: 4,
+});
 
 const metaOf = (r: Race): RaceMeta => ({
   raceId: r.id,
@@ -170,6 +176,21 @@ function handle(message: ClientMessage) {
     case "reset":
       restart(race.trackKey);
       break;
+
+    case "startDriving":
+      // A fresh run each time, so "start driving" never resumes a stale race.
+      if (!race.control.driving) {
+        race = newRace(race.trackKey, { ...race.control, driving: true });
+        broadcast({ type: "meta", meta: metaOf(race) });
+        for (const socket of clients) snapshotFor(socket);
+      }
+      broadcast({ type: "control", control: race.control });
+      break;
+
+    case "stopDriving":
+      race.control = { ...race.control, driving: false };
+      broadcast({ type: "control", control: race.control });
+      break;
   }
 }
 
@@ -205,6 +226,7 @@ wss.on("connection", (socket) => {
 // The race advances whether or not anyone is watching, so a client that joins
 // late sees a race in progress rather than one that starts when they arrive.
 setInterval(() => {
+  if (!race.control.driving) return;
   if (!race.control.running || race.sim.telemetry.status !== "live") return;
 
   const before = race.sim.telemetry;
@@ -233,5 +255,6 @@ setInterval(() => {
 console.log(
   `race server on ws://localhost:${port}\n` +
     `  track ${race.trackKey}, ${race.sim.telemetry.totalLaps} laps, ` +
-    `${race.control.speedMultiplier}x speed`,
+    `${race.control.speedMultiplier}x speed\n` +
+    `  vehicle stationary — waiting for a driver`,
 );

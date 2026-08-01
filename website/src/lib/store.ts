@@ -64,6 +64,8 @@ interface RaceStore {
   toggleRunning: () => void;
   reset: () => void;
   setTrack: (key: string) => void;
+  startDriving: () => void;
+  stopDriving: () => void;
   approveAlert: (id: string, message?: string) => void;
   dismissAlert: (id: string) => void;
   pitStop: (compound: Compound) => void;
@@ -84,7 +86,7 @@ export const useRaceStore = create<RaceStore>((set, get) => ({
   display: null,
   frame: null,
   meta: null,
-  control: { running: true, speedMultiplier: 4 },
+  control: { driving: false, running: true, speedMultiplier: 4 },
   trackKey: DEFAULT_TRACK_KEY,
 
   setSpeedMultiplier: (multiplier) =>
@@ -93,6 +95,8 @@ export const useRaceStore = create<RaceStore>((set, get) => ({
     sendToServer({ type: "setRunning", running: !get().control.running }),
   reset: () => sendToServer({ type: "reset" }),
   setTrack: (key) => sendToServer({ type: "setTrack", key }),
+  startDriving: () => sendToServer({ type: "startDriving" }),
+  stopDriving: () => sendToServer({ type: "stopDriving" }),
   approveAlert: (id, message) => sendToServer({ type: "approve", id, message }),
   dismissAlert: (id) => sendToServer({ type: "dismiss", id }),
   pitStop: (compound) => sendToServer({ type: "pit", compound }),

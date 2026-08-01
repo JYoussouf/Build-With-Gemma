@@ -1,5 +1,5 @@
-import { LiveDashboard } from "./LiveDashboard";
+import { ReplaysView } from "./ReplaysView";
 
-export default function DashboardPage() {
-  return <LiveDashboard />;
+export default function ReplaysPage() {
+  return <ReplaysView />;
 }

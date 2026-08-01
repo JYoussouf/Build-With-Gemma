@@ -36,6 +36,12 @@ export interface RaceMeta {
 
 /** Playback controls. Server-owned, so every client agrees on them. */
 export interface ControlState {
+  /**
+   * Whether the vehicle is moving. False before anyone has driven, which is
+   * the honest resting state: no telemetry, so nothing for the models to
+   * interpret. Pausing a race that has started is `running`, not this.
+   */
+  driving: boolean;
   running: boolean;
   /** 1x is real time; higher values compress the race for demos. */
   speedMultiplier: number;
@@ -89,7 +95,10 @@ export type ClientMessage =
   | { type: "setTrack"; key: string }
   | { type: "setSpeed"; multiplier: number }
   | { type: "setRunning"; running: boolean }
-  | { type: "reset" };
+  | { type: "reset" }
+  /** Demo affordance: begin streaming as though a driver had set off. */
+  | { type: "startDriving" }
+  | { type: "stopDriving" };
 
 /** Where the browser looks for the race server. */
 export const DEFAULT_WS_URL = "ws://localhost:4000";
