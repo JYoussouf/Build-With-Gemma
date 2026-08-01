@@ -81,27 +81,47 @@ function CornerGrid({ temps, pressures }: { temps: Corners; pressures: Corners }
   );
 }
 
+/**
+ * Fuel is only interesting as a margin (feedback/round-01 D1, Q1). Refuelling
+ * is banned, so the car has what it started with, and the single number that
+ * matters is how many laps of fuel are left against how many laps are left to
+ * run. Showing the surplus directly is what makes it read as a constraint —
+ * against the tank's 110 kg capacity the bar sat near empty all race and said
+ * nothing.
+ */
 function FuelPanel() {
   const fuel = useSnapshot((f) => f.fuel);
-  const onTarget = fuel.avgPerLapKg <= fuel.targetPerLapKg * 1.02;
+  const lap = useSnapshot((f) => f.lap);
+  const totalLaps = useSnapshot((f) => f.totalLaps);
+
+  const lapsToRun = Math.max(0, totalLaps - lap + 1);
+  const surplus = fuel.lapsRemaining - lapsToRun;
+  const level = surplus < 0 ? "crit" : surplus < 1 ? "warn" : "ok";
 
   return (
     <Panel title="Fuel" className="shrink-0">
-      <Bar value={fuel.remainingKg} max={fuel.capacityKg} height={10} />
+      <Bar value={fuel.remainingKg} max={fuel.startKg} height={10} />
       <div className="tnum mt-1.5 text-[15px] text-ink">
         {fuel.remainingKg.toFixed(1)}
-        <span className="text-[11px] text-ink-secondary"> / {fuel.capacityKg} kg</span>
+        <span className="text-[11px] text-ink-secondary">
+          {" "}
+          / {fuel.startKg.toFixed(1)} kg race load
+        </span>
       </div>
       <div className="mt-2 space-y-0.5">
-        <Metric label="Flow" value={fuel.flowRateKgH.toFixed(1)} unit="kg/h" />
-        <Metric label="Avg per lap" value={fuel.avgPerLapKg.toFixed(2)} unit="kg" />
-        <Metric label="Target" value={fuel.targetPerLapKg.toFixed(2)} unit="kg" />
-        <Metric label="Laps remaining" value={fuel.lapsRemaining} />
         <Metric
-          label="Status"
-          value={onTarget ? "On target" : "Over target"}
-          level={onTarget ? "ok" : "warn"}
+          label="Fuel laps vs laps left"
+          value={`${fuel.lapsRemaining} / ${lapsToRun}`}
+          level={level}
         />
+        <Metric
+          label="Margin"
+          value={`${surplus >= 0 ? "+" : ""}${surplus}`}
+          unit="laps"
+          level={level}
+        />
+        <Metric label="Per lap" value={fuel.avgPerLapKg.toFixed(2)} unit="kg" />
+        <Metric label="Flow" value={fuel.flowRateKgH.toFixed(1)} unit="kg/h" />
       </div>
     </Panel>
   );

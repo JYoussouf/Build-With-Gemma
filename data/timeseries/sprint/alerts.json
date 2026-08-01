@@ -11,6 +11,16 @@
   },
   {
     "id": "alert-2",
+    "tier": "2b",
+    "severity": "medium",
+    "lap": 2,
+    "title": "Fuel overconsumption",
+    "message": "0.17 kg last lap against a 0.16 kg target. Lift and coast into T7.",
+    "status": "sent",
+    "created_at": 32.7
+  },
+  {
+    "id": "alert-3",
     "tier": "2c",
     "severity": "high",
     "lap": 2,
@@ -32,7 +42,7 @@
     "recommendation": "Reduce braking T1 and T4. Rear bias up two clicks. Monitor two laps, box if no improvement."
   },
   {
-    "id": "alert-4",
+    "id": "alert-5",
     "tier": "2a",
     "severity": "low",
     "lap": 5,
@@ -42,7 +52,7 @@
     "created_at": 128.1
   },
   {
-    "id": "alert-5",
+    "id": "alert-6",
     "tier": "2c",
     "severity": "medium",
     "lap": 5,
@@ -60,7 +70,7 @@
     "recommendation": "Switch to balanced deploy through S2 and rebuild charge before the pit window."
   },
   {
-    "id": "alert-7",
+    "id": "alert-8",
     "tier": "2b",
     "severity": "medium",
     "lap": 8,
@@ -70,7 +80,7 @@
     "created_at": 223.5
   },
   {
-    "id": "alert-8",
+    "id": "alert-9",
     "tier": "2c",
     "severity": "high",
     "lap": 8,
@@ -92,7 +102,7 @@
     "recommendation": "Short shift out of T6 and T9. Protect the rears for the next three laps."
   },
   {
-    "id": "alert-10",
+    "id": "alert-11",
     "tier": "2a",
     "severity": "low",
     "lap": 10,
@@ -102,7 +112,7 @@
     "created_at": 287.1
   },
   {
-    "id": "alert-12",
+    "id": "alert-13",
     "tier": "2c",
     "severity": "medium",
     "lap": 13,
@@ -120,7 +130,7 @@
     "recommendation": "Smoother throttle pickup out of the slow corners."
   },
   {
-    "id": "alert-13",
+    "id": "alert-14",
     "tier": "2b",
     "severity": "medium",
     "lap": 14,
@@ -130,7 +140,7 @@
     "created_at": 414.3
   },
   {
-    "id": "alert-14",
+    "id": "alert-15",
     "tier": "2a",
     "severity": "low",
     "lap": 15,
@@ -140,7 +150,7 @@
     "created_at": 446.1
   },
   {
-    "id": "alert-16",
+    "id": "alert-17",
     "tier": "2c",
     "severity": "high",
     "lap": 17,
@@ -162,7 +172,7 @@
     "recommendation": "Reduce braking T1 and T4. Rear bias up two clicks. Monitor two laps, box if no improvement."
   },
   {
-    "id": "alert-18",
+    "id": "alert-19",
     "tier": "2a",
     "severity": "low",
     "lap": 20,
@@ -172,7 +182,7 @@
     "created_at": 605.1
   },
   {
-    "id": "alert-19",
+    "id": "alert-20",
     "tier": "2b",
     "severity": "medium",
     "lap": 20,
@@ -182,7 +192,7 @@
     "created_at": 605.1
   },
   {
-    "id": "alert-20",
+    "id": "alert-21",
     "tier": "2c",
     "severity": "medium",
     "lap": 20,
@@ -200,7 +210,7 @@
     "recommendation": "Switch to balanced deploy through S2 and rebuild charge before the pit window."
   },
   {
-    "id": "alert-23",
+    "id": "alert-24",
     "tier": "2c",
     "severity": "high",
     "lap": 24,
@@ -222,7 +232,7 @@
     "recommendation": "Short shift out of T6 and T9. Protect the rears for the next three laps."
   },
   {
-    "id": "alert-24",
+    "id": "alert-25",
     "tier": "2a",
     "severity": "low",
     "lap": 25,
@@ -232,7 +242,7 @@
     "created_at": 764.1
   },
   {
-    "id": "alert-25",
+    "id": "alert-26",
     "tier": "2b",
     "severity": "medium",
     "lap": 26,
@@ -242,7 +252,7 @@
     "created_at": 795.9
   },
   {
-    "id": "alert-27",
+    "id": "alert-28",
     "tier": "2c",
     "severity": "medium",
     "lap": 28,
@@ -260,7 +270,7 @@
     "recommendation": "Smoother throttle pickup out of the slow corners."
   },
   {
-    "id": "alert-28",
+    "id": "alert-29",
     "tier": "2a",
     "severity": "low",
     "lap": 30,
@@ -270,7 +280,7 @@
     "created_at": 923.1
   },
   {
-    "id": "alert-30",
+    "id": "alert-31",
     "tier": "2b",
     "severity": "medium",
     "lap": 32,
@@ -280,7 +290,7 @@
     "created_at": 986.7
   },
   {
-    "id": "alert-32",
+    "id": "alert-33",
     "tier": "2c",
     "severity": "high",
     "lap": 33,
@@ -302,7 +312,7 @@
     "recommendation": "Reduce braking T1 and T4. Rear bias up two clicks. Monitor two laps, box if no improvement."
   },
   {
-    "id": "alert-33",
+    "id": "alert-34",
     "tier": "2a",
     "severity": "low",
     "lap": 35,
@@ -312,7 +322,7 @@
     "created_at": 1082.1
   },
   {
-    "id": "alert-35",
+    "id": "alert-36",
     "tier": "2c",
     "severity": "medium",
     "lap": 36,
@@ -330,7 +340,7 @@
     "recommendation": "Switch to balanced deploy through S2 and rebuild charge before the pit window."
   },
   {
-    "id": "alert-36",
+    "id": "alert-37",
     "tier": "2b",
     "severity": "medium",
     "lap": 38,
@@ -340,7 +350,7 @@
     "created_at": 1177.5
   },
   {
-    "id": "alert-38",
+    "id": "alert-39",
     "tier": "2c",
     "severity": "high",
     "lap": 39,
@@ -362,7 +372,7 @@
     "recommendation": "Short shift out of T6 and T9. Protect the rears for the next three laps."
   },
   {
-    "id": "alert-39",
+    "id": "alert-40",
     "tier": "2a",
     "severity": "low",
     "lap": 40,
@@ -372,7 +382,7 @@
     "created_at": 1241.1
   },
   {
-    "id": "alert-41",
+    "id": "alert-42",
     "tier": "2c",
     "severity": "medium",
     "lap": 43,
@@ -390,7 +400,7 @@
     "recommendation": "Smoother throttle pickup out of the slow corners."
   },
   {
-    "id": "alert-42",
+    "id": "alert-43",
     "tier": "2b",
     "severity": "medium",
     "lap": 44,
@@ -400,7 +410,7 @@
     "created_at": 1368.3
   },
   {
-    "id": "alert-43",
+    "id": "alert-44",
     "tier": "2a",
     "severity": "low",
     "lap": 45,
@@ -410,7 +420,7 @@
     "created_at": 1400.1
   },
   {
-    "id": "alert-46",
+    "id": "alert-47",
     "tier": "2c",
     "severity": "high",
     "lap": 48,
@@ -432,7 +442,7 @@
     "recommendation": "Reduce braking T1 and T4. Rear bias up two clicks. Monitor two laps, box if no improvement."
   },
   {
-    "id": "alert-47",
+    "id": "alert-48",
     "tier": "2a",
     "severity": "low",
     "lap": 50,
@@ -442,7 +452,7 @@
     "created_at": 1559.1
   },
   {
-    "id": "alert-48",
+    "id": "alert-49",
     "tier": "2b",
     "severity": "medium",
     "lap": 50,
@@ -452,7 +462,7 @@
     "created_at": 1559.1
   },
   {
-    "id": "alert-50",
+    "id": "alert-51",
     "tier": "2c",
     "severity": "medium",
     "lap": 51,
@@ -470,7 +480,7 @@
     "recommendation": "Switch to balanced deploy through S2 and rebuild charge before the pit window."
   },
   {
-    "id": "alert-52",
+    "id": "alert-53",
     "tier": "2c",
     "severity": "high",
     "lap": 54,
@@ -492,7 +502,7 @@
     "recommendation": "Short shift out of T6 and T9. Protect the rears for the next three laps."
   },
   {
-    "id": "alert-53",
+    "id": "alert-54",
     "tier": "2a",
     "severity": "low",
     "lap": 55,
@@ -502,7 +512,7 @@
     "created_at": 1718.1
   },
   {
-    "id": "alert-54",
+    "id": "alert-55",
     "tier": "2b",
     "severity": "medium",
     "lap": 56,

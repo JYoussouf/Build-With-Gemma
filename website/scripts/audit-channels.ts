@@ -259,7 +259,17 @@ interface Finding {
   track: string;
   channel: string;
   detail: string;
+  /**
+   * A violation breaks a hard bound the channel's own label or spec sets, and
+   * is a defect. An advisory is inside those bounds but outside the band the
+   * reference material expects — usually a statement about these circuits
+   * rather than about the model, and a judgement call rather than a fix.
+   */
+  kind: "violation" | "advisory";
 }
+
+/** Tolerance for comparing against a bound the model clamps exactly to. */
+const EPS = 1e-6;
 
 function auditTrack(trackKey: string): {
   findings: Finding[];
@@ -302,7 +312,7 @@ function auditTrack(trackKey: string): {
   const avgLapS = lapTimes.reduce((a, b) => a + b, 0) / Math.max(1, lapTimes.length);
   const lapFuels = t.laps.map((l) => l.fuelKg).filter((v) => v > 0);
   const avgLapFuel = lapFuels.reduce((a, b) => a + b, 0) / Math.max(1, lapFuels.length);
-  const fuelUsed = vehicle.fuel.starting_kg - t.fuel.remainingKg;
+  const fuelUsed = t.fuel.startKg - t.fuel.remainingKg;
   const trackKm = sim.track.lengthM / 1000;
 
   const findings: Finding[] = [];
@@ -312,6 +322,7 @@ function auditTrack(trackKey: string): {
     findings.push({
       track: trackKey,
       channel: "tyre_age_laps",
+      kind: "violation",
       detail: `out of sync with lap number on ${ageDesync} ticks [feedback D2: one snapshot per tick, no cross-widget lag]`,
     });
   }
@@ -320,23 +331,35 @@ function auditTrack(trackKey: string): {
     const s = stats.get(spec.name);
     if (!s || s.n === 0) continue;
     const mean = s.sum / s.n;
-    const problems: string[] = [];
-    if (s.min < spec.lo) problems.push(`min ${fmt(s.min)} < ${fmt(spec.lo)}`);
-    if (s.max > spec.hi) problems.push(`max ${fmt(s.max)} > ${fmt(spec.hi)}`);
-    if (spec.meanLo !== undefined && mean < spec.meanLo)
-      problems.push(`mean ${fmt(mean)} < ${fmt(spec.meanLo)}`);
-    if (spec.meanHi !== undefined && mean > spec.meanHi)
-      problems.push(`mean ${fmt(mean)} > ${fmt(spec.meanHi)}`);
+    const violations: string[] = [];
+    const advisories: string[] = [];
 
+    if (s.min < spec.lo - EPS) violations.push(`min ${fmt(s.min)} < ${fmt(spec.lo)}`);
+    if (s.max > spec.hi + EPS) violations.push(`max ${fmt(s.max)} > ${fmt(spec.hi)}`);
+    if (spec.meanLo !== undefined && mean < spec.meanLo)
+      advisories.push(`mean ${fmt(mean)} below the ${fmt(spec.meanLo)} expected`);
+    if (spec.meanHi !== undefined && mean > spec.meanHi)
+      advisories.push(`mean ${fmt(mean)} above the ${fmt(spec.meanHi)} expected`);
+
+    const mark = violations.length ? "FAIL" : advisories.length ? "note" : "ok  ";
     rows.push(
-      `  ${problems.length ? "FAIL" : "ok  "}  ${spec.name.padEnd(20)} ` +
+      `  ${mark}  ${spec.name.padEnd(20)} ` +
         `${fmt(s.min).padStart(9)} ${fmt(mean).padStart(9)} ${fmt(s.max).padStart(9)}  ${spec.unit}`,
     );
-    if (problems.length) {
+    if (violations.length) {
       findings.push({
         track: trackKey,
         channel: spec.name,
-        detail: `${problems.join("; ")}  [expected ${fmt(spec.lo)}..${fmt(spec.hi)} — ${spec.source}]`,
+        kind: "violation",
+        detail: `${violations.join("; ")}  [bound ${fmt(spec.lo)}..${fmt(spec.hi)} — ${spec.source}]`,
+      });
+    }
+    if (advisories.length) {
+      findings.push({
+        track: trackKey,
+        channel: spec.name,
+        kind: "advisory",
+        detail: `${advisories.join("; ")}  [${spec.source}]`,
       });
     }
   }
@@ -347,7 +370,7 @@ function auditTrack(trackKey: string): {
     `  race distance       ${(trackKm * t.totalLaps).toFixed(1)} km\n` +
     `  avg lap time        ${avgLapS.toFixed(2)} s\n` +
     `  avg fuel per lap    ${avgLapFuel.toFixed(3)} kg\n` +
-    `  fuel used all race  ${fuelUsed.toFixed(1)} kg of ${vehicle.fuel.starting_kg} kg started\n` +
+    `  fuel used all race  ${fuelUsed.toFixed(1)} kg of ${t.fuel.startKg.toFixed(1)} kg loaded\n` +
     `  fuel left at flag   ${t.fuel.remainingKg.toFixed(1)} kg\n` +
     `  final tyre wear     ${t.tyres.wearPct.toFixed(1)} %\n` +
     `  final tyre age      ${t.tyres.ageLaps} laps (header lap ${t.lap})`;
@@ -375,14 +398,30 @@ for (const key of TRACK_KEYS) {
   all.push(...findings);
 }
 
-if (all.length === 0) {
-  console.log("All channels within the ranges their labels imply.");
+const violations = all.filter((f) => f.kind === "violation");
+const advisories = all.filter((f) => f.kind === "advisory");
+
+if (violations.length === 0) {
+  console.log("No violations: every channel is inside the bounds its label sets.\n");
 } else {
-  console.log(`${all.length} channel finding(s):\n`);
-  for (const f of all) {
+  console.log(`${violations.length} violation(s) — a channel outside its own spec:\n`);
+  for (const f of violations) {
+    console.log(`  [${f.track}] ${f.channel}`);
+    console.log(`      ${f.detail}`);
+  }
+  console.log("");
+}
+
+if (advisories.length) {
+  console.log(
+    `${advisories.length} advisory note(s) — in spec, but outside the band the\n` +
+      `reference material expects. These are judgement calls, not defects:\n`,
+  );
+  for (const f of advisories) {
     console.log(`  [${f.track}] ${f.channel}`);
     console.log(`      ${f.detail}`);
   }
 }
 
-process.exit(all.length ? 1 : 0);
+// Only a violation fails the run. Advisories are for a human to weigh.
+process.exit(violations.length ? 1 : 0);

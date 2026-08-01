@@ -16,14 +16,14 @@
     "decimated_hz": 1,
     "decimated_frames": 1814
   },
-  "starting_fuel_kg": 100,
+  "starting_fuel_kg": 9.68,
   "starting_compound": "medium",
   "fastest_lap_s": 31.8,
   "fuel_used_kg": 9.15,
   "final_tyre_wear_pct": 19.26,
   "alerts_by_tier": {
     "2a": 11,
-    "2b": 10,
+    "2b": 11,
     "2c": 15
   },
   "schema": {

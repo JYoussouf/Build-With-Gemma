@@ -151,7 +151,7 @@ function Gauges() {
       <Gauge
         label="Fuel"
         value={t.fuel.remainingKg}
-        max={t.fuel.capacityKg}
+        max={t.fuel.startKg}
         display={`${t.fuel.remainingKg.toFixed(0)} kg`}
         level={t.fuel.lapsRemaining < 3 ? "crit" : t.fuel.lapsRemaining < 6 ? "warn" : "ok"}
       />
