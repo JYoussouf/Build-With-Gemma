@@ -402,7 +402,12 @@ def build_svg(tracks, path_out, tile=420, pad=38):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--refresh", action="store_true", help="re-query Overpass instead of using cache")
-    ap.add_argument("--out", default=os.path.join(HERE, "tracks"))
+    ap.add_argument(
+        "--out",
+        default=os.path.join(HERE, "..", "..", "data", "tracks"),
+        help="canonical output dir; data/tracks is the single source of "
+             "truth shared by the website and the driver app",
+    )
     args = ap.parse_args()
 
     data = fetch_roads(refresh=args.refresh)
@@ -413,9 +418,12 @@ def main():
     print(f"{len(cycles)} distinct road circuits found", file=sys.stderr)
 
     os.makedirs(args.out, exist_ok=True)
-    # clear stale procedural output so the dir only holds real tracks
+    # clear stale output so the dir only holds the tracks built this run.
+    # index.json is regenerated below; everything else is disposable.
     for old in os.listdir(args.out):
-        if old.startswith("track_") or old == "preview.svg":
+        if old == "index.json":
+            continue
+        if old.endswith((".json", ".gpx", ".svg")):
             os.remove(os.path.join(args.out, old))
 
     tracks = []
@@ -427,7 +435,7 @@ def main():
             continue
         t = make_track(c, preset)
         tracks.append(t)
-        base = os.path.join(args.out, f"track_{preset['key']}")
+        base = os.path.join(args.out, preset["key"])
         with open(f"{base}.json", "w") as f:
             json.dump(t, f, indent=2)
         write_gpx(t, f"{base}.gpx")
