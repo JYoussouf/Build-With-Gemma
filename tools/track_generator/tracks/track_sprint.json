@@ -1,725 +1,692 @@
 {
-  "name": "RIM Park Loop (tight)",
-  "difficulty": "tight",
-  "seed": 7,
-  "total_distance_m": 820.2,
-  "num_corners": 5,
+  "name": "Millennium Boulevard Sprint",
+  "key": "sprint",
+  "source": "OpenStreetMap road centrelines (real pavement)",
+  "roads": [
+    "Millennium Boulevard"
+  ],
+  "total_distance_m": 774.1,
+  "num_corners": 3,
   "center": {
-    "lat": 43.51731,
-    "lon": -80.505752
+    "lat": 43.5203394,
+    "lon": -80.5018875
+  },
+  "bounds": {
+    "min_lat": 43.5195678,
+    "max_lat": 43.521141,
+    "min_lon": -80.5039475,
+    "max_lon": -80.4998474
   },
   "points": [
     {
       "seq": 0,
-      "lat": 43.5180671,
-      "lon": -80.5046113,
+      "lat": 43.5210602,
+      "lon": -80.5000424,
       "point_type": "start_finish",
       "label": "Start/Finish"
     },
     {
       "seq": 1,
-      "lat": 43.5181054,
-      "lon": -80.5046958,
+      "lat": 43.5211268,
+      "lon": -80.5000818,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 2,
-      "lat": 43.5181352,
-      "lon": -80.5047865,
+      "lat": 43.521141,
+      "lon": -80.5001473,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 3,
-      "lat": 43.518148,
-      "lon": -80.5048843,
+      "lat": 43.5211087,
+      "lon": -80.5002368,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 4,
-      "lat": 43.5181423,
-      "lon": -80.5049835,
+      "lat": 43.5210764,
+      "lon": -80.5003264,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 5,
-      "lat": 43.5181284,
-      "lon": -80.5050814,
+      "lat": 43.5210441,
+      "lon": -80.5004159,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 6,
-      "lat": 43.5181138,
-      "lon": -80.505179,
+      "lat": 43.5210119,
+      "lon": -80.5005055,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 7,
-      "lat": 43.5181012,
-      "lon": -80.5052772,
+      "lat": 43.5209796,
+      "lon": -80.500595,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 8,
-      "lat": 43.5180887,
-      "lon": -80.5053755,
+      "lat": 43.5209473,
+      "lon": -80.5006846,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 9,
-      "lat": 43.5180741,
-      "lon": -80.5054731,
+      "lat": 43.520915,
+      "lon": -80.5007741,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 10,
-      "lat": 43.5180581,
-      "lon": -80.5055704,
+      "lat": 43.5208827,
+      "lon": -80.5008637,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 11,
-      "lat": 43.5180413,
-      "lon": -80.5056674,
+      "lat": 43.5208504,
+      "lon": -80.5009532,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 12,
-      "lat": 43.5180237,
-      "lon": -80.5057641,
+      "lat": 43.5208181,
+      "lon": -80.5010428,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 13,
-      "lat": 43.5180056,
-      "lon": -80.5058606,
+      "lat": 43.5207858,
+      "lon": -80.5011323,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 14,
-      "lat": 43.517987,
-      "lon": -80.505957,
+      "lat": 43.5207535,
+      "lon": -80.5012219,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 15,
-      "lat": 43.5179681,
-      "lon": -80.5060533,
+      "lat": 43.5207213,
+      "lon": -80.5013115,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 16,
-      "lat": 43.5179489,
-      "lon": -80.5061494,
+      "lat": 43.520689,
+      "lon": -80.501401,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 17,
-      "lat": 43.5179294,
-      "lon": -80.5062455,
+      "lat": 43.5206567,
+      "lon": -80.5014906,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 18,
-      "lat": 43.5179097,
-      "lon": -80.5063414,
+      "lat": 43.5206244,
+      "lon": -80.5015801,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 19,
-      "lat": 43.5178898,
-      "lon": -80.5064373,
+      "lat": 43.5205921,
+      "lon": -80.5016697,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 20,
-      "lat": 43.5178697,
-      "lon": -80.5065331,
+      "lat": 43.5205598,
+      "lon": -80.5017592,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 21,
-      "lat": 43.5178495,
-      "lon": -80.5066289,
+      "lat": 43.5205275,
+      "lon": -80.5018488,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 22,
-      "lat": 43.5178294,
-      "lon": -80.5067246,
+      "lat": 43.5204952,
+      "lon": -80.5019383,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 23,
-      "lat": 43.5178158,
-      "lon": -80.5068225,
+      "lat": 43.5204629,
+      "lon": -80.5020279,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 24,
-      "lat": 43.5178162,
-      "lon": -80.506922,
+      "lat": 43.5204307,
+      "lon": -80.5021174,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 25,
-      "lat": 43.5178283,
-      "lon": -80.5070203,
+      "lat": 43.5203984,
+      "lon": -80.502207,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 26,
-      "lat": 43.5178251,
-      "lon": -80.5071173,
+      "lat": 43.5203661,
+      "lon": -80.5022965,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 27,
-      "lat": 43.5177652,
-      "lon": -80.5071696,
+      "lat": 43.5203338,
+      "lon": -80.5023861,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 28,
-      "lat": 43.5176952,
-      "lon": -80.5071941,
+      "lat": 43.520301,
+      "lon": -80.5024753,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 29,
-      "lat": 43.517624,
-      "lon": -80.5072112,
+      "lat": 43.5202682,
+      "lon": -80.5025644,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 30,
-      "lat": 43.5175524,
-      "lon": -80.5072252,
+      "lat": 43.5202353,
+      "lon": -80.5026536,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 31,
-      "lat": 43.5174806,
-      "lon": -80.5072375,
+      "lat": 43.5202025,
+      "lon": -80.5027428,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 32,
-      "lat": 43.5174087,
-      "lon": -80.5072482,
-      "point_type": "track",
-      "label": null
+      "lat": 43.5201697,
+      "lon": -80.502832,
+      "point_type": "sector_line",
+      "label": "Sector 1/2 boundary"
     },
     {
       "seq": 33,
-      "lat": 43.5173367,
-      "lon": -80.5072574,
+      "lat": 43.5201369,
+      "lon": -80.5029212,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 34,
-      "lat": 43.5172646,
-      "lon": -80.5072654,
-      "point_type": "sector_line",
-      "label": "Sector 1/2 boundary"
+      "lat": 43.5201041,
+      "lon": -80.5030104,
+      "point_type": "track",
+      "label": null
     },
     {
       "seq": 35,
-      "lat": 43.5171924,
-      "lon": -80.507272,
+      "lat": 43.5200713,
+      "lon": -80.5030996,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 36,
-      "lat": 43.5171202,
-      "lon": -80.5072772,
+      "lat": 43.5200343,
+      "lon": -80.5031855,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 37,
-      "lat": 43.517048,
-      "lon": -80.507281,
+      "lat": 43.5199965,
+      "lon": -80.5032709,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 38,
-      "lat": 43.5169757,
-      "lon": -80.5072833,
+      "lat": 43.5199586,
+      "lon": -80.5033562,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 39,
-      "lat": 43.5169033,
-      "lon": -80.5072837,
+      "lat": 43.5199208,
+      "lon": -80.5034416,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 40,
-      "lat": 43.516831,
-      "lon": -80.5072822,
+      "lat": 43.519883,
+      "lon": -80.5035269,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 41,
-      "lat": 43.5167588,
-      "lon": -80.5072783,
+      "lat": 43.5198369,
+      "lon": -80.503603,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 42,
-      "lat": 43.5166866,
-      "lon": -80.5072716,
+      "lat": 43.5197843,
+      "lon": -80.5036719,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 43,
-      "lat": 43.5166147,
-      "lon": -80.5072614,
+      "lat": 43.5197318,
+      "lon": -80.5037408,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 44,
-      "lat": 43.5165432,
-      "lon": -80.5072469,
+      "lat": 43.5196792,
+      "lon": -80.5038097,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 45,
-      "lat": 43.5164726,
-      "lon": -80.5072254,
+      "lat": 43.5196266,
+      "lon": -80.5038786,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 46,
-      "lat": 43.5164038,
-      "lon": -80.5071948,
+      "lat": 43.5195741,
+      "lon": -80.5039475,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 47,
-      "lat": 43.5163402,
-      "lon": -80.507148,
+      "lat": 43.5195678,
+      "lon": -80.5039247,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 48,
-      "lat": 43.5162911,
-      "lon": -80.5070761,
+      "lat": 43.5195963,
+      "lon": -80.5038327,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 49,
-      "lat": 43.5162632,
-      "lon": -80.5069846,
+      "lat": 43.5196248,
+      "lon": -80.5037408,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 50,
-      "lat": 43.5162517,
-      "lon": -80.5068864,
+      "lat": 43.5196533,
+      "lon": -80.5036488,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 51,
-      "lat": 43.5162503,
-      "lon": -80.5067868,
+      "lat": 43.5196819,
+      "lon": -80.5035569,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 52,
-      "lat": 43.5162563,
-      "lon": -80.5066874,
+      "lat": 43.5197104,
+      "lon": -80.5034649,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 53,
-      "lat": 43.5162665,
-      "lon": -80.5065887,
+      "lat": 43.519739,
+      "lon": -80.503373,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 54,
-      "lat": 43.5162803,
-      "lon": -80.5064908,
+      "lat": 43.5197683,
+      "lon": -80.5032816,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 55,
-      "lat": 43.5162962,
-      "lon": -80.5063936,
+      "lat": 43.5197995,
+      "lon": -80.5031912,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 56,
-      "lat": 43.5163138,
-      "lon": -80.5062968,
+      "lat": 43.5198306,
+      "lon": -80.5031009,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 57,
-      "lat": 43.5163324,
-      "lon": -80.5062005,
+      "lat": 43.5198617,
+      "lon": -80.5030106,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 58,
-      "lat": 43.5163515,
-      "lon": -80.5061043,
+      "lat": 43.5198928,
+      "lon": -80.5029202,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 59,
-      "lat": 43.5163705,
-      "lon": -80.506008,
+      "lat": 43.5199239,
+      "lon": -80.5028299,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 60,
-      "lat": 43.5163885,
-      "lon": -80.5059115,
+      "lat": 43.5199551,
+      "lon": -80.5027396,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 61,
-      "lat": 43.5164038,
-      "lon": -80.505814,
+      "lat": 43.5199862,
+      "lon": -80.5026492,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 62,
-      "lat": 43.5164118,
-      "lon": -80.505715,
+      "lat": 43.5200173,
+      "lon": -80.5025589,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 63,
-      "lat": 43.5164039,
-      "lon": -80.5056164,
+      "lat": 43.5200484,
+      "lon": -80.5024686,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 64,
-      "lat": 43.5163544,
-      "lon": -80.5055495,
-      "point_type": "track",
-      "label": null
+      "lat": 43.5200796,
+      "lon": -80.5023782,
+      "point_type": "sector_line",
+      "label": "Sector 2/3 boundary"
     },
     {
       "seq": 65,
-      "lat": 43.5163512,
-      "lon": -80.5054616,
+      "lat": 43.5201107,
+      "lon": -80.5022879,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 66,
-      "lat": 43.5163827,
-      "lon": -80.5053719,
+      "lat": 43.5201418,
+      "lon": -80.5021976,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 67,
-      "lat": 43.5164185,
-      "lon": -80.5052852,
+      "lat": 43.5201729,
+      "lon": -80.5021072,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 68,
-      "lat": 43.5164562,
-      "lon": -80.5052001,
-      "point_type": "sector_line",
-      "label": "Sector 2/3 boundary"
+      "lat": 43.520204,
+      "lon": -80.5020169,
+      "point_type": "track",
+      "label": null
     },
     {
       "seq": 69,
-      "lat": 43.5164951,
-      "lon": -80.505116,
+      "lat": 43.5202352,
+      "lon": -80.5019266,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 70,
-      "lat": 43.5165347,
-      "lon": -80.5050326,
+      "lat": 43.5202663,
+      "lon": -80.5018362,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 71,
-      "lat": 43.5165749,
-      "lon": -80.5049497,
+      "lat": 43.5202934,
+      "lon": -80.501746,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 72,
-      "lat": 43.5166154,
-      "lon": -80.5048671,
+      "lat": 43.5202596,
+      "lon": -80.5016576,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 73,
-      "lat": 43.5166563,
-      "lon": -80.5047849,
+      "lat": 43.520261,
+      "lon": -80.5015684,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 74,
-      "lat": 43.5166976,
-      "lon": -80.5047029,
+      "lat": 43.5202927,
+      "lon": -80.5014784,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 75,
-      "lat": 43.516739,
-      "lon": -80.5046212,
+      "lat": 43.5203245,
+      "lon": -80.5013885,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 76,
-      "lat": 43.5167808,
-      "lon": -80.5045398,
+      "lat": 43.5203562,
+      "lon": -80.5012986,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 77,
-      "lat": 43.5168227,
-      "lon": -80.5044585,
+      "lat": 43.520388,
+      "lon": -80.5012087,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 78,
-      "lat": 43.5168649,
-      "lon": -80.5043775,
+      "lat": 43.5204144,
+      "lon": -80.5011179,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 79,
-      "lat": 43.5169073,
-      "lon": -80.5042967,
+      "lat": 43.5203999,
+      "lon": -80.5010201,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 80,
-      "lat": 43.51695,
-      "lon": -80.5042162,
+      "lat": 43.5204312,
+      "lon": -80.5009299,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 81,
-      "lat": 43.5169929,
-      "lon": -80.504136,
+      "lat": 43.5204625,
+      "lon": -80.5008397,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 82,
-      "lat": 43.5170364,
-      "lon": -80.5040563,
+      "lat": 43.5204938,
+      "lon": -80.5007495,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 83,
-      "lat": 43.5170776,
-      "lon": -80.5039744,
+      "lat": 43.5205251,
+      "lon": -80.5006593,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 84,
-      "lat": 43.5171135,
-      "lon": -80.5038879,
+      "lat": 43.5205564,
+      "lon": -80.500569,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 85,
-      "lat": 43.5171449,
-      "lon": -80.5037981,
+      "lat": 43.5205877,
+      "lon": -80.5004788,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 86,
-      "lat": 43.5171791,
-      "lon": -80.5037104,
+      "lat": 43.520619,
+      "lon": -80.5003886,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 87,
-      "lat": 43.5172415,
-      "lon": -80.5036705,
+      "lat": 43.5206503,
+      "lon": -80.5002984,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 88,
-      "lat": 43.5173111,
-      "lon": -80.5036963,
+      "lat": 43.5206816,
+      "lon": -80.5002082,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 89,
-      "lat": 43.5173754,
-      "lon": -80.5037418,
+      "lat": 43.5207128,
+      "lon": -80.5001179,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 90,
-      "lat": 43.5174362,
-      "lon": -80.5037957,
+      "lat": 43.5207442,
+      "lon": -80.5000277,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 91,
-      "lat": 43.517495,
-      "lon": -80.5038538,
+      "lat": 43.5207755,
+      "lon": -80.4999376,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 92,
-      "lat": 43.5175524,
-      "lon": -80.5039144,
+      "lat": 43.5208069,
+      "lon": -80.4998474,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 93,
-      "lat": 43.5176086,
-      "lon": -80.5039772,
+      "lat": 43.5208702,
+      "lon": -80.4998962,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 94,
-      "lat": 43.5176639,
-      "lon": -80.5040414,
+      "lat": 43.5209336,
+      "lon": -80.4999449,
       "point_type": "track",
       "label": null
     },
     {
       "seq": 95,
-      "lat": 43.5177183,
-      "lon": -80.5041071,
-      "point_type": "track",
-      "label": null
-    },
-    {
-      "seq": 96,
-      "lat": 43.5177719,
-      "lon": -80.5041741,
-      "point_type": "track",
-      "label": null
-    },
-    {
-      "seq": 97,
-      "lat": 43.5178246,
-      "lon": -80.5042424,
-      "point_type": "track",
-      "label": null
-    },
-    {
-      "seq": 98,
-      "lat": 43.5178763,
-      "lon": -80.5043121,
-      "point_type": "track",
-      "label": null
-    },
-    {
-      "seq": 99,
-      "lat": 43.5179269,
-      "lon": -80.5043833,
-      "point_type": "track",
-      "label": null
-    },
-    {
-      "seq": 100,
-      "lat": 43.5179762,
-      "lon": -80.5044563,
-      "point_type": "track",
-      "label": null
-    },
-    {
-      "seq": 101,
-      "lat": 43.5180233,
-      "lon": -80.5045319,
+      "lat": 43.5209969,
+      "lon": -80.4999937,
       "point_type": "track",
       "label": null
     }

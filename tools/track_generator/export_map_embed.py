@@ -25,27 +25,43 @@ import json
 import os
 
 TRACK_COLORS = {
+    # OSM road circuits (build_tracks_from_osm.py)
+    "sprint": "#ff5252",
+    "club": "#ffd600",
+    "grand": "#00e5ff",
+    # legacy procedural shapes (generate_tracks.py)
     "tight": "#ff5252",
     "medium": "#ffd600",
     "flowing": "#00e5ff",
 }
 
+ORDER = ["sprint", "club", "grand", "tight", "medium", "flowing"]
+
 
 def load_tracks(track_dir):
     tracks = []
-    for fp in sorted(glob.glob(os.path.join(track_dir, "track_*.json"))):
+    for fp in glob.glob(os.path.join(track_dir, "track_*.json")):
         with open(fp) as f:
             tracks.append(json.load(f))
     if not tracks:
-        raise SystemExit(f"No track_*.json files found in {track_dir} -- run generate_tracks.py first.")
-    return tracks
+        raise SystemExit(
+            f"No track_*.json files found in {track_dir} -- "
+            "run build_tracks_from_osm.py (real roads) or generate_tracks.py (procedural) first."
+        )
+
+    def sort_key(t):
+        k = t.get("key", t.get("difficulty", ""))
+        return (ORDER.index(k) if k in ORDER else 99, t.get("total_distance_m", 0))
+
+    return sorted(tracks, key=sort_key)
 
 
 def track_js_data(tracks):
     """Build the inline JS array of track objects (path, color, meta)."""
     out = []
     for t in tracks:
-        color = TRACK_COLORS.get(t["difficulty"], "#e0e0e0")
+        key = t.get("key", t.get("difficulty", ""))
+        color = TRACK_COLORS.get(key, "#e0e0e0")
         path = [{"lat": p["lat"], "lng": p["lon"]} for p in t["points"]]
         path.append(path[0])  # close the loop visually
         markers = [
@@ -55,16 +71,23 @@ def track_js_data(tracks):
         ]
         out.append(
             {
-                "name": t["name"],
-                "difficulty": t["difficulty"],
+                "name": t.get("name", key),
+                "key": key,
                 "color": color,
                 "distance_m": t["total_distance_m"],
                 "corners": t["num_corners"],
+                "roads": t.get("roads", []),
                 "path": path,
                 "markers": markers,
             }
         )
     return out
+
+
+def bounds_of(tracks_data):
+    lats = [p["lat"] for t in tracks_data for p in t["path"]]
+    lngs = [p["lng"] for t in tracks_data for p in t["path"]]
+    return min(lats), min(lngs), max(lats), max(lngs)
 
 
 GOOGLE_TEMPLATE = """<!doctype html>
@@ -97,49 +120,57 @@ GOOGLE_TEMPLATE = """<!doctype html>
   const TRACKS = {tracks_json};
   const CENTER = {{ lat: {center_lat}, lng: {center_lon} }};
 
-  let map, polylines = [];
+  const BOUNDS = {{ south: {min_lat}, west: {min_lon}, north: {max_lat}, east: {max_lon} }};
+
+  let map;
+  const layers = [];  // one entry per track: all overlays belonging to it
 
   function initMap() {{
     map = new google.maps.Map(document.getElementById("map"), {{
       center: CENTER,
-      zoom: 17,
+      zoom: 16,
       mapTypeId: "hybrid",
       mapTypeControl: true,
       streetViewControl: false,
       fullscreenControl: true,
     }});
+    map.fitBounds(BOUNDS, 48);
 
-    TRACKS.forEach((track, i) => {{
-      const poly = new google.maps.Polyline({{
-        path: track.path,
-        strokeColor: track.color,
-        strokeOpacity: 0.95,
-        strokeWeight: 4,
-        map: map,
-      }});
-      polylines.push(poly);
+    TRACKS.forEach(track => {{
+      const group = [];
+      // dark casing under the coloured line so it reads over satellite imagery
+      group.push(new google.maps.Polyline({{
+        path: track.path, strokeColor: "#000", strokeOpacity: 0.55,
+        strokeWeight: 8, map: map, zIndex: 1,
+      }}));
+      group.push(new google.maps.Polyline({{
+        path: track.path, strokeColor: track.color, strokeOpacity: 0.95,
+        strokeWeight: 4, map: map, zIndex: 2,
+      }}));
 
       track.markers.forEach(m => {{
-        new google.maps.Marker({{
+        group.push(new google.maps.Marker({{
           position: {{ lat: m.lat, lng: m.lng }},
           map: map,
-          title: m.label || m.type,
+          title: `${{track.name}} — ${{m.label || m.type}}`,
+          zIndex: 3,
           icon: {{
             path: google.maps.SymbolPath.CIRCLE,
             scale: m.type === "start_finish" ? 7 : 5,
             fillColor: m.type === "start_finish" ? "#d50000" : "#ffab00",
             fillOpacity: 1,
             strokeColor: "#000",
-            strokeWeight: 1,
+            strokeWeight: 1.5,
           }},
-        }});
+        }}));
       }});
+      layers.push(group);
     }});
 
     document.querySelectorAll("#legend .row").forEach((row, i) => {{
       row.addEventListener("click", () => {{
-        const visible = polylines[i].getMap() !== null;
-        polylines[i].setMap(visible ? null : map);
+        const visible = !row.classList.contains("off");
+        layers[i].forEach(o => o.setMap(visible ? null : map));
         row.classList.toggle("off", visible);
       }});
     }});
@@ -185,7 +216,9 @@ LEAFLET_TEMPLATE = """<!doctype html>
   const TRACKS = {tracks_json};
   const CENTER = [{center_lat}, {center_lon}];
 
-  const map = L.map("map", {{ zoomControl: true }}).setView(CENTER, 17);
+  const BOUNDS = [[{min_lat}, {min_lon}], [{max_lat}, {max_lon}]];
+
+  const map = L.map("map", {{ zoomControl: true }}).setView(CENTER, 16);
 
   const satellite = L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{{z}}/{{y}}/{{x}}",
@@ -196,12 +229,17 @@ LEAFLET_TEMPLATE = """<!doctype html>
     {{ attribution: "&copy; OpenStreetMap contributors", maxZoom: 19 }}
   );
   L.control.layers({{ "Satellite": satellite, "Roadmap": roadmap }}).addTo(map);
+  map.fitBounds(BOUNDS, {{ padding: [40, 40] }});
 
-  const polylines = [];
+  const layers = [];
   TRACKS.forEach(track => {{
     const latlngs = track.path.map(p => [p.lat, p.lng]);
-    const poly = L.polyline(latlngs, {{ color: track.color, weight: 4, opacity: 0.95 }}).addTo(map);
-    polylines.push(poly);
+    const group = L.layerGroup().addTo(map);
+    // dark casing so the coloured line reads over satellite imagery
+    L.polyline(latlngs, {{ color: "#000", weight: 8, opacity: 0.55 }}).addTo(group);
+    L.polyline(latlngs, {{ color: track.color, weight: 4, opacity: 0.95 }})
+      .addTo(group)
+      .bindTooltip(`${{track.name}} — ${{track.distance_m}}m, ${{track.corners}} corners`);
 
     track.markers.forEach(m => {{
       L.circleMarker([m.lat, m.lng], {{
@@ -209,15 +247,16 @@ LEAFLET_TEMPLATE = """<!doctype html>
         fillColor: m.type === "start_finish" ? "#d50000" : "#ffab00",
         fillOpacity: 1,
         color: "#000",
-        weight: 1,
-      }}).addTo(map).bindTooltip(m.label || m.type);
+        weight: 1.5,
+      }}).addTo(group).bindTooltip(`${{track.name}} — ${{m.label || m.type}}`);
     }});
+    layers.push(group);
   }});
 
   document.querySelectorAll("#legend .row").forEach((row, i) => {{
     row.addEventListener("click", () => {{
-      const visible = map.hasLayer(polylines[i]);
-      if (visible) map.removeLayer(polylines[i]); else map.addLayer(polylines[i]);
+      const visible = map.hasLayer(layers[i]);
+      if (visible) map.removeLayer(layers[i]); else map.addLayer(layers[i]);
       row.classList.toggle("off", visible);
     }});
   }});
@@ -230,9 +269,12 @@ LEAFLET_TEMPLATE = """<!doctype html>
 def build_legend_rows(tracks_data):
     rows = []
     for t in tracks_data:
+        title = t["key"].title() if t["key"] else t["name"]
+        roads = ", ".join(t["roads"])
+        tip = f' title="{roads}"' if roads else ""
         rows.append(
-            f'<div class="row"><span class="sw" style="background:{t["color"]};"></span>'
-            f'{t["difficulty"].title()}<span class="meta">{t["distance_m"]}m · {t["corners"]}c</span></div>'
+            f'<div class="row"{tip}><span class="sw" style="background:{t["color"]};"></span>'
+            f'{title}<span class="meta">{t["distance_m"]:.0f}m · {t["corners"]}c</span></div>'
         )
     return "\n  ".join(rows)
 
@@ -247,32 +289,30 @@ def main():
 
     tracks = load_tracks(args.dir)
     tracks_data = track_js_data(tracks)
-    center_lat, center_lon = tracks[0]["center"]["lat"], tracks[0]["center"]["lon"]
+    min_lat, min_lon, max_lat, max_lon = bounds_of(tracks_data)
+    center_lat = (min_lat + max_lat) / 2
+    center_lon = (min_lon + max_lon) / 2
     legend_rows = build_legend_rows(tracks_data)
     tracks_json = json.dumps(tracks_data)
 
     out_google = args.out_google or os.path.join(args.dir, "..", "map_google.html")
     out_leaflet = args.out_leaflet or os.path.join(args.dir, "..", "map_leaflet.html")
 
+    fmt = dict(
+        legend_rows=legend_rows,
+        tracks_json=tracks_json,
+        center_lat=round(center_lat, 7),
+        center_lon=round(center_lon, 7),
+        min_lat=round(min_lat, 7),
+        min_lon=round(min_lon, 7),
+        max_lat=round(max_lat, 7),
+        max_lon=round(max_lon, 7),
+    )
+
     with open(out_google, "w") as f:
-        f.write(
-            GOOGLE_TEMPLATE.format(
-                legend_rows=legend_rows,
-                tracks_json=tracks_json,
-                center_lat=center_lat,
-                center_lon=center_lon,
-                api_key=args.api_key,
-            )
-        )
+        f.write(GOOGLE_TEMPLATE.format(api_key=args.api_key, **fmt))
     with open(out_leaflet, "w") as f:
-        f.write(
-            LEAFLET_TEMPLATE.format(
-                legend_rows=legend_rows,
-                tracks_json=tracks_json,
-                center_lat=center_lat,
-                center_lon=center_lon,
-            )
-        )
+        f.write(LEAFLET_TEMPLATE.format(**fmt))
 
     print(f"Wrote {os.path.abspath(out_google)}")
     print(f"Wrote {os.path.abspath(out_leaflet)}")
