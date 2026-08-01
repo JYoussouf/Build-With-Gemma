@@ -25,7 +25,7 @@ export function TopBar() {
       <Field label="Lap" value={`${t.lap} / ${t.totalLaps}`} />
       <Field label="Fuel" value={`${t.fuel.remainingKg.toFixed(1)} kg`} />
       <Field
-        label="Tyres"
+        label="Tires"
         value={`${t.tyres.wearPct.toFixed(0)}% ${COMPOUND_LABEL[t.tyres.compound]}`}
         level={levelFor(t.tyres.wearPct, 45, 62)}
       />

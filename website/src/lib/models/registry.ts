@@ -178,7 +178,7 @@ const sensitivity = anomalyConfig.sensitivity;
 
 const timesfm: ModelDescriptor = {
   id: "timesfm",
-  name: "Optimization Explorer",
+  name: "TimesFM Search Model",
   kind: `TimesFM · statistical · every ${anomalyConfig.check_interval_s} s`,
   summary:
     "Forecasts each channel forward from its own recent history and flags the ones that come in wide of the forecast. It searches the whole channel space continuously, which is the point: it finds the deviation nobody thought to write a rule for. Gemma interprets what it flags, and an engineer decides before the driver hears anything.",
@@ -223,7 +223,7 @@ const rules: ModelDescriptor = {
   name: "Rules Model",
   kind: "rule engine · per lap",
   summary:
-    "Preventative checks that need no interpretation and no approval. Where the Optimization Explorer searches for the unknown, this covers the known: the handful of conditions that always matter, evaluated every lap and sent straight to the driver. A cooldown stops a rule firing every tick once its condition is true.",
+    "Preventative checks that need no interpretation and no approval. Where the TimesFM Search Model searches for the unknown, this covers the known: the handful of conditions that always matter, evaluated every lap and sent straight to the driver. A cooldown stops a rule firing every tick once its condition is true.",
   implementation: "data/config/alert-rules.json",
   inputs: [
     { name: "lap", unit: "—", note: "Drives the every-N-laps triggers." },

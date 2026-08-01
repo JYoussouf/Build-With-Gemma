@@ -39,7 +39,7 @@ function TyrePanel() {
 
   return (
     <Panel
-      title="Tyres"
+      title="Tires"
       className="shrink-0"
       action={
         <span className="flex items-center gap-1.5">

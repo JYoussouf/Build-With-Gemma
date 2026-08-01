@@ -71,24 +71,12 @@ export function FilterPane({
       </header>
 
       <Pipeline />
-
-      <p className="rounded-md border border-status-warn/40 bg-status-warn/5 px-3 py-2 text-[11px] leading-relaxed text-ink-body">
-        <span className="font-medium tracking-[0.1em] text-status-warn uppercase">
-          Demonstration
-        </span>{" "}
-        — nothing on this page suppresses anything. Every alert still reaches the
-        Engineer Panel and the driver HUD. The Gemma call is canned: the prompt
-        below is the one that would be sent, and the rules are compiled locally
-        from the shapes it asks for.
-      </p>
-
       <Section
         n={1}
         title="Decisions"
-        blurb="The feedback, read off the engineer's actions on 2c anomalies."
       >
         {!connected ? (
-          <Empty>Start a race to collect decisions.</Empty>
+          <Empty>Leave alert feedback to collect decisions.</Empty>
         ) : decisions.length === 0 ? (
           <Empty>
             No decisions yet. Approve or dismiss an anomaly on the Pit Wall and
@@ -125,15 +113,12 @@ export function FilterPane({
       <Section
         n={2}
         title="The prompt"
-        blurb="Shown verbatim, with the decisions above interpolated into it."
       >
         <Prompt text={renderPrompt(decisions)} />
       </Section>
-
       <Section
         n={3}
         title="Derived rules"
-        blurb={`A rule needs ${SUPPORT_THRESHOLD} supporting decisions before it counts as active. Below that it is shown as proposed, so the learning is watchable. Expand any rule for the decisions behind it.`}
       >
         {rules.length === 0 ? (
           <Empty>No rules yet. Dismissals are what produce them.</Empty>
@@ -151,37 +136,6 @@ export function FilterPane({
           </ul>
         )}
       </Section>
-
-      <Section
-        n={4}
-        title="What it would have cut"
-        blurb="Hypothetical throughout. These alerts were raised and reached the engineer exactly as they always do."
-      >
-        {suppressions.length === 0 ? (
-          <Empty>
-            Nothing. No active rule matches an anomaly raised this session.
-          </Empty>
-        ) : (
-          <ul className="divide-y divide-pit-border/60 rounded-md border border-pit-border bg-pit-panel/80">
-            {suppressions.map(({ alert, rule }) => (
-              <li key={alert.id} className="px-3 py-1.5">
-                <div className="flex flex-wrap items-baseline gap-x-3 text-[11px]">
-                  <span className="font-mono text-ink-muted">lap {alert.lap}</span>
-                  <span className="text-ink-body line-through decoration-ink-muted">
-                    {alert.title}
-                  </span>
-                  <span className="font-mono text-[10px] text-ink-muted">
-                    {alert.severity}
-                  </span>
-                </div>
-                <p className="mt-0.5 text-[10px] text-ink-muted">
-                  would have been cut by: {rule.statement}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Section>
     </article>
   );
 }
@@ -189,7 +143,7 @@ export function FilterPane({
 /** The loop, drawn once so the pane's four sections have somewhere to sit. */
 function Pipeline() {
   const steps = [
-    { label: "Optimization Explorer", note: "searches the space" },
+    { label: "TimesFM Search Model", note: "searches the space" },
     { label: "Agent-In-The-Loop Filter", note: "learned suppression" },
     { label: "Engineer Panel", note: "approve · modify · dismiss" },
   ];
@@ -249,7 +203,7 @@ function Prompt({ text }: { text: string }) {
       </pre>
       {!open && (
         <div className="border-t border-pit-border px-3 py-1 text-[10px] text-ink-muted">
-          truncated — expand to read the whole prompt
+          truncated
         </div>
       )}
     </div>
