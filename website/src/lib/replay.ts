@@ -55,6 +55,8 @@ export interface RunSummary {
   fuel_used_kg: number;
   final_tyre_wear_pct: number;
   alerts_by_tier: Record<string, number>;
+  /** When the archive was written. See the note in /api/runs. */
+  recorded_at: string;
 }
 
 const PRODUCER: Record<AlertTier, Alert["producer"]> = {

@@ -5,7 +5,7 @@
  * about why replay is kept away from the live pipeline.
  */
 
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import trackIndex from "@data/tracks/index.json";
 
@@ -22,17 +22,27 @@ export interface RunMeta {
   final_tyre_wear_pct: number;
   alerts_by_tier: Record<string, number>;
   frames: { total_at_10hz: number; decimated_frames: number };
+  /**
+   * When the archive was written, from the file's own mtime. The generator is
+   * deliberately deterministic and stamps nothing itself, so this is the only
+   * honest record of when a run was produced.
+   */
+  recorded_at: string;
 }
 
 export async function GET() {
   const runs = await Promise.all(
     trackIndex.tracks.map(async (t) => {
       try {
-        const raw = await readFile(
-          join(DATA, "timeseries", t.key, "meta.json"),
-          "utf8",
-        );
-        return JSON.parse(raw) as RunMeta;
+        const path = join(DATA, "timeseries", t.key, "meta.json");
+        const [raw, stats] = await Promise.all([
+          readFile(path, "utf8"),
+          stat(path),
+        ]);
+        return {
+          ...JSON.parse(raw),
+          recorded_at: stats.mtime.toISOString(),
+        } as RunMeta;
       } catch {
         // A track with no archive yet is simply absent from the list.
         return null;
