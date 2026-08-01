@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 import { RunSummary } from "@/lib/replay";
-import { getTrack, pointAt } from "@/lib/track";
+import { TrackDiagram } from "@/components/dashboard/TrackDiagram";
+import { getTrack } from "@/lib/track";
 import { lapTime } from "@/lib/format";
 
 /**
@@ -160,8 +161,6 @@ function Stat({ label, value }: { label: string; value: string }) {
 /** The selected circuit, drawn large from its committed geometry. */
 function TrackPreview({ run }: { run: RunSummary }) {
   const track = getTrack(run.track_key);
-  const start = pointAt(track, 0);
-  const road = Math.max(6, track.lengthM / 190);
 
   return (
     <div className="flex h-full min-h-0 flex-col rounded-md border border-pit-border bg-pit-panel/60">
@@ -174,79 +173,7 @@ function TrackPreview({ run }: { run: RunSummary }) {
       </header>
 
       <div className="min-h-0 flex-1 p-4">
-        <svg
-          viewBox={track.svg.viewBox}
-          className="h-full w-full"
-          role="img"
-          aria-label={`${track.name} circuit layout`}
-        >
-          <path
-            d={track.svg.pathD}
-            fill="none"
-            stroke="#2e2e2e"
-            strokeWidth={road * 1.9}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-          <path
-            d={track.svg.pathD}
-            fill="none"
-            stroke="#4a4a4a"
-            strokeWidth={road * 1.45}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-          <path
-            d={track.svg.pathD}
-            fill="none"
-            stroke="#141414"
-            strokeWidth={road}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-
-          {track.sectorSplits.map((split, i) => {
-            const p = pointAt(track, split);
-            return (
-              <g key={split}>
-                <circle
-                  cx={p.x}
-                  cy={-p.y}
-                  r={road * 0.7}
-                  fill="#0a0a0a"
-                  stroke="#606060"
-                  strokeWidth={road * 0.22}
-                />
-                <text
-                  x={p.x}
-                  y={-p.y - road * 1.4}
-                  textAnchor="middle"
-                  fill="#a0a0a0"
-                  fontSize={road * 1.6}
-                >
-                  S{i + 2}
-                </text>
-              </g>
-            );
-          })}
-
-          <rect
-            x={start.x - road * 0.28}
-            y={-start.y - road * 1.2}
-            width={road * 0.56}
-            height={road * 2.4}
-            fill="#ffffff"
-          />
-          <text
-            x={start.x}
-            y={-start.y - road * 1.8}
-            textAnchor="middle"
-            fill="#ffffff"
-            fontSize={road * 1.6}
-          >
-            S/F
-          </text>
-        </svg>
+        <TrackDiagram track={track} className="h-full w-full" />
       </div>
 
       <footer className="flex shrink-0 flex-wrap gap-x-6 gap-y-1 border-t border-pit-border px-4 py-2.5">
