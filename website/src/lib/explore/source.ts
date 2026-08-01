@@ -37,7 +37,7 @@ export interface FrameSource {
 }
 
 /**
- * How many frames the live view keeps. Five minutes at 10 Hz — enough to hold
+ * How many frames the live view keeps. Five minutes at 10 Hz - enough to hold
  * several laps of any of the tracks without growing without bound.
  */
 const LIVE_BUFFER = 3000;

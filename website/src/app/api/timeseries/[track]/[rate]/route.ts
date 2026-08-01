@@ -12,7 +12,7 @@ import trackIndex from "@data/tracks/index.json";
 
 const TRACK_KEYS = new Set(trackIndex.tracks.map((t) => t.key));
 
-/** Request rate to filename. Also the allowlist — nothing else is readable. */
+/** Request rate to filename. Also the allowlist - nothing else is readable. */
 const FILES: Record<string, string> = {
   "10hz": "telemetry-10hz.jsonl",
   "1hz": "telemetry-1hz.jsonl",
@@ -47,7 +47,7 @@ export async function GET(
     });
   } catch {
     return Response.json(
-      { error: `no ${file} for ${track} — run npm run generate:data` },
+      { error: `no ${file} for ${track} - run npm run generate:data` },
       { status: 404 },
     );
   }

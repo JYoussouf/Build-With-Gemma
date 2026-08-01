@@ -13,6 +13,12 @@ const BUILT = [
     detail:
       "Mobile app Screen 3, rendered in the browser. Speed, delta to target, the active call, and three gauges.",
   },
+  {
+    href: "/internals/explore",
+    title: "Behind the Scenes - Explore Telemetry",
+    detail:
+      "Every channel the models emit, grouped by tier, charted live or replayed from the recorded races in /data.",
+  },
 ];
 
 const PLANNED = [

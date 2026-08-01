@@ -74,7 +74,7 @@ function corners(
 }
 
 export const CHANNELS: Channel[] = [
-  // Tier 1 — the phone, scaled into F1 ranges.
+  // Tier 1 - the phone, scaled into F1 ranges.
   {
     id: "speed_kmh",
     label: "Speed",
@@ -137,7 +137,7 @@ export const CHANNELS: Channel[] = [
     get: (f) => f.weather.rain_mm_h,
   },
 
-  // Tier 2 — arithmetic on tier 1.
+  // Tier 2 - arithmetic on tier 1.
   { id: "lap", label: "Lap", unit: "", tier: 2, group: "Timing", get: (f) => f.lap },
   {
     id: "lap_time_s",
@@ -192,7 +192,7 @@ export const CHANNELS: Channel[] = [
     get: (f) => f.steering_deg,
   },
 
-  // Tier 3 — the physics models.
+  // Tier 3 - the physics models.
   {
     id: "rpm",
     label: "RPM",
