@@ -63,9 +63,12 @@ function SpeedAndInputs() {
   );
 }
 
+/** Full lock on these circuits is about 55 degrees at the wheel. */
+const STEERING_RANGE_DEG = 60;
+
 function SteeringTrace({ deg }: { deg: number }) {
-  const clamped = Math.max(-30, Math.min(30, deg));
-  const pct = 50 + (clamped / 30) * 50;
+  const clamped = Math.max(-STEERING_RANGE_DEG, Math.min(STEERING_RANGE_DEG, deg));
+  const pct = 50 + (clamped / STEERING_RANGE_DEG) * 50;
   return (
     <div>
       <div className="flex items-baseline justify-between">

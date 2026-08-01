@@ -24,12 +24,13 @@
  * out. Regenerate after changing anything in /data/config.
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import raceDefaults from "../../data/config/race-defaults.json" with { type: "json" };
 import vehicle from "../../data/config/vehicle.json" with { type: "json" };
+import { centerFor, LatLon, r, toFrame, toLatLon } from "../src/lib/frame";
 import { createSimState, SimState, step } from "../src/lib/simulation";
 import { pointAt, TRACK_KEYS, Track } from "../src/lib/track";
 import { Telemetry } from "../src/lib/types";
@@ -53,98 +54,12 @@ function flag(name: string, fallback: number): number {
 const FULL_RATE_LAPS = flag("full-rate-laps", 3);
 const DECIMATED_HZ = flag("decimated-hz", 1);
 
-const M_PER_DEG_LAT = 110540;
-const M_PER_DEG_LON = 111320;
-
-const r = (v: number, dp = 2) => Number(v.toFixed(dp));
-
-/** Inverse of the projection in track.ts, for reconstructing GPS fixes. */
-function toLatLon(x: number, y: number, center: { lat: number; lon: number }) {
-  return {
-    lat: center.lat + y / M_PER_DEG_LAT,
-    lon:
-      center.lon +
-      x / (M_PER_DEG_LON * Math.cos((center.lat * Math.PI) / 180)),
-  };
-}
-
 function advance(sim: SimState, dt: number): SimState {
   const steps = Math.max(1, Math.ceil(dt / SUBSTEP));
   const h = dt / steps;
   let cur = sim;
   for (let i = 0; i < steps; i++) cur = step(cur, h);
   return cur;
-}
-
-function frameOf(t: Telemetry, clock: number, track: Track, center: { lat: number; lon: number }) {
-  const p = pointAt(track, t.trackPos);
-  const { lat, lon } = toLatLon(p.x, p.y, center);
-  return {
-    t: r(clock, 1),
-    lap: t.lap,
-    lap_time_s: r(t.lapTimeS, 2),
-    track_pos: r(t.trackPos, 5),
-    sector: t.sector,
-    lat: r(lat, 7),
-    lon: r(lon, 7),
-    speed_kmh: r(t.speedKmh, 1),
-    rpm: Math.round(t.rpm),
-    gear: t.gear,
-    throttle_pct: r(t.throttlePct, 1),
-    brake_pct: r(t.brakePct, 1),
-    steering_deg: r(t.steeringDeg, 2),
-    lateral_g: r(t.lateralG, 3),
-    longitudinal_g: r(t.longitudinalG, 3),
-    tyres: {
-      compound: t.tyres.compound,
-      wear_pct: r(t.tyres.wearPct, 3),
-      grip_level: r(t.tyres.gripLevel, 4),
-      age_laps: t.tyres.ageLaps,
-      temps_c: {
-        fl: r(t.tyres.temps.fl, 1),
-        fr: r(t.tyres.temps.fr, 1),
-        rl: r(t.tyres.temps.rl, 1),
-        rr: r(t.tyres.temps.rr, 1),
-      },
-      pressures_psi: {
-        fl: r(t.tyres.pressures.fl, 2),
-        fr: r(t.tyres.pressures.fr, 2),
-        rl: r(t.tyres.pressures.rl, 2),
-        rr: r(t.tyres.pressures.rr, 2),
-      },
-    },
-    fuel: {
-      remaining_kg: r(t.fuel.remainingKg, 3),
-      flow_rate_kg_h: r(t.fuel.flowRateKgH, 1),
-      avg_per_lap_kg: r(t.fuel.avgPerLapKg, 3),
-      laps_remaining: t.fuel.lapsRemaining,
-    },
-    ers: {
-      soc_pct: r(t.ers.socPct, 2),
-      mode: t.ers.mode,
-      power_kw: r(t.ers.powerKw, 1),
-      harvested_mj: r(t.ers.harvestedMj, 3),
-      deployed_mj: r(t.ers.deployedMj, 3),
-    },
-    brakes: {
-      temps_c: {
-        fl: r(t.brakes.temps.fl, 1),
-        fr: r(t.brakes.temps.fr, 1),
-        rl: r(t.brakes.temps.rl, 1),
-        rr: r(t.brakes.temps.rr, 1),
-      },
-      pad_pct: r(t.brakes.padPct, 2),
-      fade: t.brakes.fade,
-    },
-    weather: {
-      air_temp_c: r(t.weather.airTempC, 1),
-      track_temp_c: r(t.weather.trackTempC, 1),
-      wind_kmh: r(t.weather.windKmh, 1),
-      wind_dir: t.weather.windDir,
-      rain_mm_h: r(t.weather.rainMmH, 2),
-      condition: t.weather.condition,
-    },
-  };
 }
 
 /**
@@ -156,7 +71,7 @@ function sensorPacketOf(
   t: Telemetry,
   clock: number,
   track: Track,
-  center: { lat: number; lon: number },
+  center: LatLon,
   raceId: string,
   epoch: number,
 ) {
@@ -195,11 +110,7 @@ function sensorPacketOf(
 function generateTrack(trackKey: string) {
   let sim = createSimState(trackKey);
   const track = sim.track;
-  // The geographic centre the projection was built around, so emitted GPS
-  // fixes land back on the real roads.
-  const center: { lat: number; lon: number } = JSON.parse(
-    readFileSync(join(DATA, "tracks", `${trackKey}.json`), "utf8"),
-  ).center;
+  const center = centerFor(trackKey);
 
   const fullRate: string[] = [];
   const decimated: string[] = [];
@@ -213,7 +124,7 @@ function generateTrack(trackKey: string) {
   let tick = 0;
   let totalFrames = 0;
   while (sim.telemetry.status === "live" && clock < MAX_SIM_SECONDS) {
-    const frame = frameOf(sim.telemetry, clock, track, center);
+    const frame = toFrame(sim.telemetry, clock, track, center);
     totalFrames++;
 
     if (sim.telemetry.lap <= FULL_RATE_LAPS) fullRate.push(JSON.stringify(frame));
