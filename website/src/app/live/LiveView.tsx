@@ -63,7 +63,7 @@ function LiveBody() {
       <main className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(0,30fr)_minmax(0,40fr)_minmax(0,30fr)]">
         <LeftColumn />
         <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-3">
-          <div className="min-h-0">
+          <div className="min-h-0 overflow-hidden">
             <CentreColumn />
           </div>
           <div className="h-[190px] shrink-0 xl:h-[230px]">

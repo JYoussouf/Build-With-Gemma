@@ -72,6 +72,8 @@ function PendingApprovals() {
 function AnomalyCard({ alert }: { alert: Alert }) {
   const approveAlert = useRaceStore((s) => s.approveAlert);
   const dismissAlert = useRaceStore((s) => s.dismissAlert);
+  // A recording is a record of what was decided, not a queue to decide on.
+  const replay = useRaceStore((s) => s.mode === "replay");
   const [editing, setEditing] = useState(false);
   const [edited, setEdited] = useState<string | null>(null);
   // Until the engineer types, the draft tracks Gemma's recommendation, which
@@ -141,6 +143,11 @@ function AnomalyCard({ alert }: { alert: Alert }) {
         )}
       </div>
 
+      {replay ? (
+        <p className="mt-2 text-[10px] tracking-[0.1em] text-ink-muted uppercase">
+          Recorded · {alert.status === "sent" ? "reached driver" : alert.status}
+        </p>
+      ) : (
       <div className={`mt-2 flex gap-1.5 ${alert.interpreting ? "hidden" : ""}`}>
         <button
           onClick={() => approveAlert(alert.id, draft)}
@@ -161,6 +168,7 @@ function AnomalyCard({ alert }: { alert: Alert }) {
           Dismiss
         </button>
       </div>
+      )}
     </article>
   );
 }
