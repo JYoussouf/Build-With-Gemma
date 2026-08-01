@@ -101,5 +101,17 @@ export type ClientMessage =
   | { type: "stopDriving" };
 
 /** Where the browser looks for the race server. */
-export const DEFAULT_WS_URL = "ws://localhost:4000";
+function getDefaultWsUrl(): string {
+  if (typeof window !== "undefined") {
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const host = window.location.hostname;
+    const isLocalDev = host === "localhost" || host === "127.0.0.1";
+    if (isLocalDev) {
+      return "ws://localhost:4000";
+    }
+    return `${proto}//${window.location.host}/ws`;
+  }
+  return "ws://localhost:4000";
+}
+export const DEFAULT_WS_URL = getDefaultWsUrl();
 export const DEFAULT_WS_PORT = 4000;
