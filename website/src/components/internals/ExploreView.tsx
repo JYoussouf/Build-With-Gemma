@@ -46,6 +46,21 @@ export function ExploreView() {
   const trackKey = kind === "live" ? liveTrack : replayTrack;
   const setTrackKey = kind === "live" ? setLiveTrack : setReplayTrack;
 
+  /**
+   * One click to get data moving, for showing the view to someone.
+   *
+   * It runs a recorded archive rather than asking the race server to drive,
+   * so it works with no server running and shows the same thing every time.
+   * It switches the source to REPLAY rather than feeding the archive into
+   * LIVE: recorded frames rendered under a LIVE label would be exactly the
+   * silent fallback the race server exists to prevent.
+   */
+  const startDemo = useCallback(() => {
+    setKind("replay");
+    replay.seek?.(0);
+    replay.setPlaying(true);
+  }, [replay]);
+
   const colourOf = useCallback(
     (id: string) => {
       const i = selected.indexOf(id);
@@ -92,6 +107,7 @@ export function ExploreView() {
       <Controls
         kind={kind}
         setKind={setKind}
+        startDemo={startDemo}
         rate={rate}
         setRate={setRate}
         trackKey={trackKey}
@@ -143,6 +159,7 @@ export function ExploreView() {
 function Controls({
   kind,
   setKind,
+  startDemo,
   rate,
   setRate,
   trackKey,
@@ -155,6 +172,7 @@ function Controls({
 }: {
   kind: "live" | "replay";
   setKind: (k: "live" | "replay") => void;
+  startDemo: () => void;
   rate: Rate;
   setRate: (r: Rate) => void;
   trackKey: string;
@@ -235,6 +253,15 @@ function Controls({
         onChange={(v) => source.setSpeed(Number(v))}
         options={SPEEDS.map((s) => ({ value: String(s), label: `${s}x` }))}
       />
+
+      {kind === "live" && (
+        <button
+          onClick={startDemo}
+          className="rounded border border-status-crit bg-status-crit px-4 py-1.5 text-[12px] font-semibold tracking-[0.1em] text-white uppercase transition-opacity hover:opacity-90"
+        >
+          Demo: Start Driving
+        </button>
+      )}
 
       {source.seek && (
         <label className="flex min-w-40 flex-1 items-center gap-2">
