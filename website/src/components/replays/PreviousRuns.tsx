@@ -232,7 +232,7 @@ function RunRow({
       <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
         <Stat
           label="Fastest"
-          value={run.fastest_lap_s ? lapTime(run.fastest_lap_s) : "—"}
+          value={run.fastest_lap_s ? lapTime(run.fastest_lap_s) : "-"}
         />
         <Stat label="Alerts" value={String(alerts)} />
         <Stat label="Wear" value={`${run.final_tyre_wear_pct.toFixed(0)}%`} />
@@ -304,7 +304,7 @@ function TrackPreview({ run }: { run: RunSummary }) {
       </div>
 
       <footer className="flex shrink-0 flex-wrap gap-x-6 gap-y-1 border-t border-pit-border px-4 py-2.5">
-        <Stat label="Roads" value={track.roads.join(", ") || "—"} />
+        <Stat label="Roads" value={track.roads.join(", ") || "-"} />
         <Stat label="Fuel used" value={`${run.fuel_used_kg.toFixed(1)} kg`} />
         <Stat label="Final wear" value={`${run.final_tyre_wear_pct.toFixed(0)}%`} />
         <Stat

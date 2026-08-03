@@ -37,9 +37,9 @@ const DECISION_CLASS: Record<Decision["kind"], string> = {
 };
 
 const DECISION_LEARNED: Record<Decision["kind"], string> = {
-  approved: "kept — protects this shape from suppression",
-  modified: "kept — wording, not the finding",
-  dismissed: "noise — counts toward a suppression rule",
+  approved: "kept - protects this shape from suppression",
+  modified: "kept - wording, not the finding",
+  dismissed: "noise - counts toward a suppression rule",
 };
 
 export function FilterPane({
@@ -64,7 +64,7 @@ export function FilterPane({
           one says it was worth their attention; dismissing one says it was
           noise. Gemma condenses that history into suppression rules, which
           would act as a final unsupervised filter on what the Optimization
-          Explorer raises — so the system gets quieter the more it is corrected,
+          Explorer raises - so the system gets quieter the more it is corrected,
           without anyone writing a rule by hand.
         </p>
       </header>

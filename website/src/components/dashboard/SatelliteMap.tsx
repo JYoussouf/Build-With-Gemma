@@ -146,7 +146,7 @@ export function SatelliteMap({
       .catch(() => {
         if (containerRef.current) {
           containerRef.current.innerHTML =
-            '<div class="flex h-full items-center justify-center text-ink-secondary text-sm">Map unavailable — check API key</div>';
+            '<div class="flex h-full items-center justify-center text-ink-secondary text-sm">Map unavailable - check API key</div>';
         }
       });
 

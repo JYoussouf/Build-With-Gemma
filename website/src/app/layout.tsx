@@ -3,7 +3,7 @@ import { AppTabs } from "@/components/AppTabs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RaceMind — Pit Wall",
+  title: "RaceMind - Pit Wall",
   description:
     "Live F1-style race engineering: telemetry, Gemma strategy, and driver alerts from a phone in your pocket.",
 };

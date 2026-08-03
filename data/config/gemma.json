@@ -7,7 +7,7 @@
     "verification_note": "Set to the Gemma 4 line on request. Still unverified because nothing in this codebase calls it yet - verified means a real inference call reported this id back, not that someone typed it. The UI therefore keeps showing the name muted with an 'unverified' marker. Flip verified to true at the point a client is wired up and returns this identifier, and correct the size suffix then if the deployed variant is not 27B."
   },
   "producers": {
-    "description": "What generates each alert tier (docs/alert-system.md). The alerts panel groups by these, so a viewer can tell model-generated reasoning from a static rule firing — feedback round-01 F5.",
+    "description": "What generates each alert tier (docs/alert-system.md). The alerts panel groups by these, so a viewer can tell model-generated reasoning from a static rule firing - feedback round-01 F5.",
     "2a": {
       "label": "Rule engine",
       "kind": "deterministic",

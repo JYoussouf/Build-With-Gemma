@@ -69,7 +69,7 @@ function StaleBanner() {
     >
       <StatusDot level="crit" />
       <span className="text-[12px] text-ink">
-        Disconnected from race server — showing the last frame received.
+        Disconnected from race server - showing the last frame received.
         Reconnecting.
       </span>
     </div>

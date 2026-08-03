@@ -35,8 +35,8 @@ function RecommendedPit() {
   const lapsToPit = Math.max(0, pitWindowStart - lap);
 
   const recommendation = (() => {
-    if (tyreWear > 55) return { urgency: "critical", text: "Tyre wear critical — pit this lap", compound: "hard" as const };
-    if (inWindow) return { urgency: "high", text: "In pit window — box when ready", compound: "hard" as const };
+    if (tyreWear > 55) return { urgency: "critical", text: "Tyre wear critical - pit this lap", compound: "hard" as const };
+    if (inWindow) return { urgency: "high", text: "In pit window - box when ready", compound: "hard" as const };
     if (lapsToPit <= 3) return { urgency: "medium", text: `Pit window opens in ${lapsToPit} lap${lapsToPit === 1 ? "" : "s"}`, compound: "hard" as const };
     return { urgency: "low", text: `Next pit: lap ${pitLap}`, compound: "hard" as const };
   })();

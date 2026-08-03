@@ -220,7 +220,7 @@ export function createSimState(trackKey: string = DEFAULT_TRACK_KEY): SimState {
       {
         id: "gemma-0",
         lap: 1,
-        text: "Green flag. Build tyre temperature through S1 and settle into a rhythm — I will set your lap and fuel targets off the first flying lap.",
+        text: "Green flag. Build tyre temperature through S1 and settle into a rhythm - I will set your lap and fuel targets off the first flying lap.",
         createdAt: 0,
       },
     ],
@@ -852,7 +852,7 @@ function maybeAnomaly(t: Telemetry, sc: SimScratch) {
 }
 
 const GEMMA_LINES = [
-  "Tire wear tracking to plan. Extend to lap 27 — fuel and tires both support it.",
+  "Tire wear tracking to plan. Extend to lap 27 - fuel and tires both support it.",
   "Pace is stable within a tenth. Push S1, protect the rears through S2.",
   "Fuel margin holding at plus two kilos. No lift and coast needed yet.",
   "Track temp climbing. Expect degradation to steepen over the next five laps.",
@@ -926,7 +926,7 @@ export function applyPit(sim: SimState, compound: Compound): SimState {
       {
         id: `gemma-pit-${t.lap}-${sim.scratch.clock.toFixed(0)}`,
         lap: t.lap,
-        text: `Box confirmed. ${compound.toUpperCase()} fitted on lap ${t.lap}. Two laps to build temperature — push T1 to T4.`,
+        text: `Box confirmed. ${compound.toUpperCase()} fitted on lap ${t.lap}. Two laps to build temperature - push T1 to T4.`,
         createdAt: sim.scratch.clock,
       },
       ...t.agentMessages,

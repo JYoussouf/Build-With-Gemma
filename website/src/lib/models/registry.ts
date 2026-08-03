@@ -57,12 +57,12 @@ const tread: ModelDescriptor = {
   name: "Tread Model",
   kind: `physics · ${HZ} Hz`,
   summary:
-    "Degrades the tire every tick from how hard the car is being driven. Cornering load dominates, speed and track temperature scale it, and the compound multiplies it. Grip falls away gently with wear until the cliff, past which it drops fast — which is what turns a stint length into a strategy decision.",
+    "Degrades the tire every tick from how hard the car is being driven. Cornering load dominates, speed and track temperature scale it, and the compound multiplies it. Grip falls away gently with wear until the cliff, past which it drops fast - which is what turns a stint length into a strategy decision.",
   implementation: "website/src/lib/simulation.ts:479-490",
   inputs: [
     { name: "lateral_g", unit: "g", note: "Cornering load. The dominant term." },
     { name: "speed_kmh", unit: "km/h", note: "Scaled against the car's maximum." },
-    { name: "compound", unit: "—", note: "Selects the wear and life factors." },
+    { name: "compound", unit: "-", note: "Selects the wear and life factors." },
     { name: "track_temp_c", unit: "°C", note: "Thermal term, referenced to 40 °C." },
   ],
   groups: [
@@ -127,7 +127,7 @@ const fuel: ModelDescriptor = {
     { name: "speed_kmh", unit: "km/h", note: "Squared, as the drag term." },
     { name: "longitudinal_g", unit: "g", note: "Positive only. Braking burns nothing." },
     { name: "lateral_g", unit: "g", note: "Cornering load, absolute." },
-    { name: "compound", unit: "—", note: "Selects the fuel factor." },
+    { name: "compound", unit: "-", note: "Selects the fuel factor." },
     { name: "wind_kmh", unit: "km/h", note: "Raises burn proportionally." },
     { name: "rain_mm_h", unit: "mm/h", note: "Any rain applies a flat penalty." },
   ],
@@ -184,7 +184,7 @@ const timesfm: ModelDescriptor = {
     "Forecasts each channel forward from its own recent history and flags the ones that come in wide of the forecast. It searches the whole channel space continuously, which is the point: it finds the deviation nobody thought to write a rule for. Gemma interprets what it flags, and an engineer decides before the driver hears anything.",
   implementation: "data/config/anomaly-detection.json · simulated in simulation.ts",
   inputs: [
-    { name: "channel history", unit: "—", note: "Recent samples per channel." },
+    { name: "channel history", unit: "-", note: "Recent samples per channel." },
     { name: "sensitivity", unit: "σ", note: "How far off forecast counts as a deviation." },
   ],
   groups: [
@@ -226,10 +226,10 @@ const rules: ModelDescriptor = {
     "Preventative checks that need no interpretation and no approval. Where the TimesFM Search Model searches for the unknown, this covers the known: the handful of conditions that always matter, evaluated every lap and sent straight to the driver. A cooldown stops a rule firing every tick once its condition is true.",
   implementation: "data/config/alert-rules.json",
   inputs: [
-    { name: "lap", unit: "—", note: "Drives the every-N-laps triggers." },
+    { name: "lap", unit: "-", note: "Drives the every-N-laps triggers." },
     {
       name: "telemetry channels",
-      unit: "—",
+      unit: "-",
       note: "The channels named by the threshold triggers.",
     },
   ],

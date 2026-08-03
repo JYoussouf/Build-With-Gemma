@@ -52,10 +52,10 @@ export function TimingTower() {
               in progress
             </Td>
             <Td className="text-ink">{lapTime(current)}</Td>
-            <Td className="text-ink-muted">—</Td>
-            <Td className="hidden text-ink-muted xl:table-cell">—</Td>
-            <Td className="hidden text-ink-muted xl:table-cell">—</Td>
-            <Td className="hidden text-ink-muted xl:table-cell">—</Td>
+            <Td className="text-ink-muted">-</Td>
+            <Td className="hidden text-ink-muted xl:table-cell">-</Td>
+            <Td className="hidden text-ink-muted xl:table-cell">-</Td>
+            <Td className="hidden text-ink-muted xl:table-cell">-</Td>
           </tr>
           {laps.map((l) => {
             const delta = l.total - target;
