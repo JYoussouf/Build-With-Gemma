@@ -3,7 +3,13 @@ import { AppTabs } from "@/components/AppTabs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RaceMind - Pit Wall",
+  // Each view names itself and the template puts RaceMind in front, so the
+  // browser tab says which view it is rather than the same thing everywhere.
+  // `default` is only reached by a page that sets no title of its own.
+  title: {
+    default: "RaceMind",
+    template: "RaceMind - %s",
+  },
   description:
     "Live F1-style race engineering: telemetry, Gemma strategy, and driver alerts from a phone in your pocket.",
 };
