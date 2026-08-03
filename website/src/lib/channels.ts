@@ -347,7 +347,7 @@ export const TIERS: { tier: Tier; title: string; blurb: string }[] = [
   {
     tier: 1,
     title: "Tier 1",
-    blurb: "Direct from phone sensors and the weather API",
+    blurb: "Direct from OBD-II telematics and the weather API",
   },
   { tier: 2, title: "Tier 2", blurb: "Derived by simple arithmetic" },
   { tier: 3, title: "Tier 3", blurb: "Output of the physics models" },

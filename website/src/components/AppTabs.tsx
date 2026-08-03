@@ -17,15 +17,14 @@ interface Tab {
   label: string;
   /** Views that exist. Everything else is listed but not yet linked. */
   ready: boolean;
-  /** Matches nested routes, so /internals/explore lights up Explore. */
+  /** Matches nested routes, so /internals/explore lights up My Data. */
   match?: string;
 }
 
 const TABS: Tab[] = [
   { href: "/live", label: "Live", ready: true },
   { href: "/dashboard", label: "Replays", ready: true },
-  { href: "/track-trace", label: "Track & Trace", ready: true },
-  { href: "/internals/explore", label: "Explore", ready: true, match: "/internals/explore" },
+  { href: "/internals/explore", label: "My Data", ready: true, match: "/internals/explore" },
   { href: "/internals/models", label: "Models", ready: true, match: "/internals/models" },
   { href: "/internals/config", label: "Config", ready: false },
 ];
@@ -38,9 +37,9 @@ export function AppTabs() {
     // vertical space, so the bar takes as little as it can while staying
     // legible.
     <header className="flex h-9 shrink-0 items-stretch border-b border-pit-border bg-pit-black/70">
-      {/* Straight to Live rather than to `/`, which only redirects here. */}
+      {/* Straight to Replays rather than to `/`, which only redirects here. */}
       <Link
-        href="/live"
+        href="/dashboard"
         className="flex items-center border-r border-pit-border px-5 text-[13px] font-semibold tracking-[0.22em] text-ink transition-colors hover:text-ink-secondary"
       >
         RACEMIND

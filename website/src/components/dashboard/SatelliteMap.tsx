@@ -1,18 +1,27 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
+import { TrackDiagram } from "@/components/dashboard/TrackDiagram";
 import { pointAt, Track } from "@/lib/track";
 import { centerFor, toLatLon } from "@/lib/frame";
 
 let mapsLoaded = false;
 
+/**
+ * The satellite view needs a Google Maps key, and a deployment without one is
+ * the normal case rather than a fault: the key is billable and per-account, so
+ * anyone running this from a clone has none. When it is missing the panel
+ * falls back to TrackDiagram, which draws the same circuit over the same
+ * streets from `/data` and needs no third party at all. Previously this state
+ * rendered "Map unavailable - check API key", which read as something broken
+ * when nothing was.
+ */
 async function loadMaps(): Promise<void> {
   if (mapsLoaded) return;
   const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
   if (!key) {
-    console.warn("NEXT_PUBLIC_GOOGLE_MAPS_KEY not set, falling back to SVG");
-    throw new Error("no key");
+    throw new Error("no NEXT_PUBLIC_GOOGLE_MAPS_KEY");
   }
   setOptions({ key, v: "weekly" });
   await importLibrary("maps");
@@ -37,6 +46,7 @@ export function SatelliteMap({
   height = "100%",
 }: SatelliteMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [unavailable, setUnavailable] = useState(false);
   const mapRef = useRef<google.maps.Map | null>(null);
   const trackPathRef = useRef<google.maps.Polyline | null>(null);
   const carMarkerRef = useRef<google.maps.Marker | null>(null);
@@ -144,10 +154,7 @@ export function SatelliteMap({
         }
       })
       .catch(() => {
-        if (containerRef.current) {
-          containerRef.current.innerHTML =
-            '<div class="flex h-full items-center justify-center text-ink-secondary text-sm">Map unavailable - check API key</div>';
-        }
+        if (!cancelled) setUnavailable(true);
       });
 
     return () => {
@@ -161,6 +168,16 @@ export function SatelliteMap({
     const ll = toLatLon(p.x, p.y, center);
     carMarkerRef.current.setPosition({ lat: ll.lat, lng: ll.lon });
   }, [carPos, track, center]);
+
+  if (unavailable) {
+    return (
+      <TrackDiagram
+        track={track}
+        carPos={showCar ? carPos : undefined}
+        className={className ?? "w-full"}
+      />
+    );
+  }
 
   return (
     <div
