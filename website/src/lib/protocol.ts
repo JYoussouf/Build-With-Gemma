@@ -1,10 +1,10 @@
 /**
  * The wire protocol between the race server and its clients.
  *
- * One server process owns the race. Every client — the pit wall, the driver
- * HUD, and eventually the Flutter app — is a subscriber that renders what it
- * is sent and asks the server to make changes. No client mutates race state
- * locally, which is what keeps the two views showing the same race.
+ * One server process owns the race. Every client — the pit wall, and
+ * eventually the Flutter app — is a subscriber that renders what it is sent
+ * and asks the server to make changes. No client mutates race state locally,
+ * which is what keeps every view showing the same race.
  *
  * Telemetry rides in the canonical snake_case `TelemetryFrame` from
  * `frame.ts`, the same shape as `/data/timeseries/*.jsonl` and

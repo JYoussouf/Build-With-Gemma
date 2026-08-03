@@ -64,20 +64,6 @@ body {
   animation: pit-pulse 1.8s ease-in-out infinite;
 }
 
-@keyframes hud-flash {
-  0%,
-  100% {
-    background-color: rgba(213, 0, 0, 0.18);
-  }
-  50% {
-    background-color: rgba(213, 0, 0, 0.42);
-  }
-}
-
-.hud-flash {
-  animation: hud-flash 0.9s ease-in-out infinite;
-}
-
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -91,8 +77,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pending-pulse,
-  .hud-flash {
+  .pending-pulse {
     animation: none;
   }
 }

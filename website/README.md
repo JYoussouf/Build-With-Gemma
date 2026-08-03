@@ -29,7 +29,6 @@ silent local fallback is exactly the desync this architecture removes.
 | ------------ | ----------------------------------------------------------------------- |
 | `/`          | Index of what is built and what is not                                   |
 | `/dashboard` | View 4 — Live Race Dashboard, three columns, engineer control panel      |
-| `/hud`       | Driver HUD (mobile app Screen 3) rendered at phone width in the browser  |
 
 Views 1-3 (Track Setup, Race Configuration, Pre-Race Report) are not built yet.
 
@@ -60,14 +59,14 @@ switching restarts the race, since the physics state is track-specific.
                                 │ WebSocket :4000
                    ┌────────────┴────────────┐
                    ▼                         ▼
-            /dashboard                    /hud
-            (pit wall)                (driver HUD)
+            /dashboard                 Flutter app
+            (pit wall)                 (driver HUD)
 ```
 
 One process holds the race. Clients subscribe and render what they are sent;
 they never mutate race state locally. Approving a 2c anomaly on the pit wall
 is a request to the server, which applies it once and broadcasts the result,
-so the driver HUD sees the same alert with the same wording.
+so every subscriber sees the same alert with the same wording.
 
 The wire protocol is `src/lib/protocol.ts`. Telemetry rides in the canonical
 snake_case frame from `frame.ts` — the same shape as `/data/timeseries` and
@@ -136,14 +135,13 @@ default so a lap takes about 20 seconds.
 The alert system (`docs/alert-system.md`) is wired end to end:
 
 - **2a** preventative rules and **2b** signal patterns fire automatically and
-  land on the HUD immediately
+  reach the driver immediately
 - **2c** anomalies queue in the engineer panel as **pending**. Approve, modify
-  the driver-facing wording, or dismiss. Only approved ones reach `/hud`, tagged
-  `[2c] ✓ VERIFIED`
+  the driver-facing wording, or dismiss. Only approved ones are broadcast to
+  the driver, tagged `[2c] ✓ VERIFIED`
 
-Open `/dashboard` and `/hud` in two windows to watch the handoff live: both are
-connected to the same race, so an approval on the pit wall appears on the HUD
-within a frame.
+The handoff is live: every client is connected to the same race, so an approval
+on the pit wall is broadcast within a frame.
 
 ## Swapping in the real backend
 

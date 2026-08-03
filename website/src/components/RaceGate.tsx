@@ -46,9 +46,8 @@ function Waiting({ connecting }: { connecting: boolean }) {
           </h1>
         </div>
         <p className="mt-3 text-[13px] leading-relaxed text-ink-secondary">
-          The pit wall and the driver HUD both render a race owned by the
-          server, so that they show the same one. Nothing simulates in the
-          browser.
+          Every view renders a race owned by the server, so that they all show
+          the same one. Nothing simulates in the browser.
         </p>
         <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
           Start it with{" "}

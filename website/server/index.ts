@@ -4,9 +4,9 @@
  * Run from website/:  npm run dev:server
  *
  * Every client subscribes and renders what it is sent. Nothing simulates
- * locally any more, which is what makes the pit wall and the driver HUD show
- * the same race — previously each browser tab ran its own simulator and they
- * drifted apart immediately.
+ * locally any more, which is what makes every client show the same race —
+ * previously each browser tab ran its own simulator and they drifted apart
+ * immediately.
  *
  * This stands in for the Python backend in docs/data-flow.md. It is written in
  * TypeScript purely so it can import `src/lib/simulation.ts` directly: one

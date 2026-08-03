@@ -25,7 +25,6 @@ const TABS: Tab[] = [
   { href: "/live", label: "Live", ready: true },
   { href: "/dashboard", label: "Replays", ready: true },
   { href: "/track-trace", label: "Track & Trace", ready: true },
-  { href: "/hud", label: "Driver HUD", ready: true },
   { href: "/internals/explore", label: "Explore", ready: true, match: "/internals/explore" },
   { href: "/internals/models", label: "Models", ready: true, match: "/internals/models" },
   { href: "/internals/config", label: "Config", ready: false },

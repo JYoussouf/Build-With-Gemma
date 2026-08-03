@@ -8,12 +8,6 @@ const BUILT = [
       "View 4. Track map, full telemetry, Gemma strategy, and the engineer control panel with the 2c approval queue.",
   },
   {
-    href: "/hud",
-    title: "Driver HUD",
-    detail:
-      "Mobile app Screen 3, rendered in the browser. Speed, delta to target, the active call, and three gauges.",
-  },
-  {
     href: "/internals/explore",
     title: "Behind the Scenes - Explore Telemetry",
     detail:
@@ -38,8 +32,8 @@ export default function Home() {
           reaches the driver.
         </p>
         <p className="mt-2 text-[12px] text-ink-muted">
-          First draft. Both views run against a client-side simulator — no backend
-          required yet.
+          First draft. Every view renders a race owned by the local race server -
+          nothing simulates in the browser.
         </p>
       </header>
 
