@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "racemind",
+  "main": "./worker.ts",
+  "compatibility_date": "2025-03-25",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // OpenNext's server needs to be able to call back into itself. Without this
+  // it falls back to fetching its own public hostname, which Cloudflare
+  // refuses as a same-zone subrequest — every page comes back "error code:
+  // 1042" rather than rendering.
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "racemind" }],
+  "durable_objects": {
+    "bindings": [{ "name": "RACE", "class_name": "RaceServer" }]
+  },
+  "migrations": [
+    {
+      // SQLite-backed, which is the only kind the Workers free plan offers.
+      // The race itself lives in memory; the class stores nothing.
+      "tag": "v1",
+      "new_sqlite_classes": ["RaceServer"]
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

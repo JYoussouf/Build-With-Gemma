@@ -7,3 +7,9 @@ build/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+
+# Staged from /data by scripts/stage-data.ts at build time.
+public/data/
+.open-next/
+.wrangler/
+cloudflare-env.d.ts

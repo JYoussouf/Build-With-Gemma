@@ -7,11 +7,17 @@
     "build": "next build",
     "build:geometry": "tsx scripts/build-geometry.ts",
     "build:map": "tsx scripts/build-map-context.ts",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "dev": "next dev",
     "dev:all": "concurrently -n web,race -c cyan,magenta \"next dev\" \"tsx watch server/index.ts\"",
     "dev:server": "tsx watch server/index.ts",
     "generate:data": "npm run build:geometry && npm run build:map && tsx scripts/generate-data.ts",
     "lint": "eslint",
+    "prebuild": "tsx scripts/stage-data.ts",
+    "predev": "tsx scripts/stage-data.ts",
+    "predev:all": "tsx scripts/stage-data.ts",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "start": "next start",
     "start:server": "tsx server/index.ts",
     "typecheck": "tsc --noEmit",
@@ -20,7 +26,7 @@
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.1.1",
     "@types/pg": "^8.20.3",
-    "next": "15.5.4",
+    "next": "^15.5.22",
     "pg": "^8.22.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
@@ -29,6 +35,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.1",
+    "@opennextjs/cloudflare": "^1.20.2",
     "@tailwindcss/postcss": "4.1.14",
     "@types/node": "24.7.0",
     "@types/react": "19.1.9",
@@ -38,9 +45,10 @@
     "ajv-formats": "^3.0.1",
     "concurrently": "^9.1.0",
     "eslint": "9.37.0",
-    "eslint-config-next": "15.5.4",
+    "eslint-config-next": "^15.5.22",
     "tailwindcss": "4.1.14",
     "tsx": "^4.20.6",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "wrangler": "^4.118.0"
   }
 }

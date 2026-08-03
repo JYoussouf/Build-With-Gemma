@@ -143,6 +143,30 @@ The alert system (`docs/alert-system.md`) is wired end to end:
 The handoff is live: every client is connected to the same race, so an approval
 on the pit wall is broadcast within a frame.
 
+## Deployment
+
+Live at **https://racemind.joseppy-workers.workers.dev** on Cloudflare Workers.
+
+```
+npm run deploy     # builds and deploys
+npm run preview    # runs the built Worker locally on :8788
+```
+
+Workers has no long-lived process to put the race server in, so on Cloudflare it lives in a Durable Object instead: `server/race-do.ts` is `server/index.ts` with the same physics and the same wire protocol, behind `/ws`.
+One named instance, so every visitor lands on the same race.
+`server/index.ts` remains the local server; the browser cannot tell them apart.
+
+Two things the deployment does not have:
+
+- **Postgres.** The recording and the DB-backed replays are local-only. `pg` cannot load on Workers at all, so those routes import it at request time and degrade to 500 rather than failing the whole build. The replay views read the static archives instead, which is what they already did when Postgres was down.
+- **A race that runs unattended.** The local server advances the race whether or not anyone is watching. Here the last client to disconnect stops the clock, because a Durable Object ticking at 10 Hz for nobody bills for the privilege.
+
+`/data` is staged into `public/data` by `scripts/stage-data.ts` (run by `predev` and `prebuild`) and served as static assets, since Workers has no filesystem to read the archives from.
+It stays gitignored: `/data` is the single copy in source.
+
+`tsconfig.worker.json` typechecks the Cloudflare half separately.
+The workerd runtime types redefine globals the browser also has — under them `Response.json()` returns `unknown` — so letting them into the app's typecheck breaks every component that reads a fetch body.
+
 ## Swapping in the real backend
 
 Reimplement `server/index.ts` in Python behind the same protocol. The browser

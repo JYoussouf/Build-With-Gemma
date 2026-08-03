@@ -27,5 +27,17 @@
     ".next/types/**/*.ts",
     "../data/**/*.json"
   ],
-  "exclude": ["node_modules"]
+  // The Worker entrypoint and the Durable Object are typechecked by
+  // tsconfig.worker.json instead. `cloudflare-env.d.ts` pulls in the workerd
+  // runtime types, which redefine globals the browser also has — under them
+  // `Response.json()` returns `unknown` rather than `any`, and every component
+  // that reads a fetch body stops compiling. Those types belong to the two
+  // files that run on Workers, not to the React app.
+  "exclude": [
+    "node_modules",
+    "cloudflare-env.d.ts",
+    "worker.ts",
+    "server/race-do.ts",
+    "open-next.config.ts"
+  ]
 }

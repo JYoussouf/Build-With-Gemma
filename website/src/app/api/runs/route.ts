@@ -6,15 +6,16 @@
  * 2. PostgreSQL races — races that were run live on the server and completed
  *
  * DB races appear as replayable runs so the engineer can review what happened.
+ *
+ * The database half is local-only: the Cloudflare deployment has no Postgres
+ * in front of it, and Workers cannot load `pg` at all, so the import is
+ * deferred to request time and a failure degrades to the archives alone. That
+ * is the same shape as the local behaviour when Postgres is simply down.
  */
 
-import { readFile, stat } from "node:fs/promises";
-import { join } from "node:path";
 import manifest from "@data/timeseries/runs.json";
 import trackIndex from "@data/tracks/index.json";
-import { listRaces } from "@server/db";
-
-const DATA = join(process.cwd(), "..", "data");
+import { readArchive } from "@/lib/archives";
 
 export interface RunSummary {
   id: string;
@@ -37,14 +38,26 @@ export interface RunSummary {
   label: string;
 }
 
-export async function GET() {
+/** Sorting compares these as strings, so the fallback has to be ISO too. */
+function lastModifiedOf(response: Response): string {
+  const header = response.headers.get("last-modified");
+  const parsed = header ? Date.parse(header) : NaN;
+  return Number.isNaN(parsed) ? new Date(0).toISOString() : new Date(parsed).toISOString();
+}
+
+export async function GET(request: Request) {
   // ── Static archives ──────────────────────────────────────────────
   const archiveRuns = await Promise.all(
     manifest.runs.map(async (entry) => {
       try {
-        const path = join(DATA, "timeseries", entry.archive, "meta.json");
-        const [raw, stats] = await Promise.all([readFile(path, "utf8"), stat(path)]);
-        const meta = JSON.parse(raw);
+        const response = await readArchive(
+          `/data/timeseries/${entry.archive}/meta.json`,
+          request.url,
+        );
+        if (!response.ok) return null;
+        // Workers types give json() an `unknown`, and the archive's meta is
+        // spread wholesale into the summary below.
+        const meta = (await response.json()) as Record<string, unknown>;
         const overrides =
           "overrides" in entry ? (entry.overrides as Record<string, unknown>) : {};
 
@@ -55,7 +68,9 @@ export async function GET() {
           track_key: entry.track_key,
           label: entry.label,
           source: "archive" as const,
-          recorded_at: entry.recorded_at ?? stats.mtime.toISOString(),
+          // Every manifest entry carries its own timestamp; the header is the
+          // fallback for one that does not, in place of the file's mtime.
+          recorded_at: entry.recorded_at ?? lastModifiedOf(response),
           ...("synthetic" in entry
             ? {
                 synthetic: entry.synthetic,
@@ -72,6 +87,7 @@ export async function GET() {
   // ── Database races ────────────────────────────────────────────────
   let dbRuns: RunSummary[] = [];
   try {
+    const { listRaces } = await import("@server/db");
     const races = await listRaces();
     dbRuns = races.map((race) => {
       const track = trackIndex.tracks.find((t) => t.key === "club");

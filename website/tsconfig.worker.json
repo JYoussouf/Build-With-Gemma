@@ -1,0 +1,33 @@
+{
+  // The Cloudflare half of the app: the Worker entrypoint and the Durable
+  // Object that owns the race. Separated from tsconfig.json because these run
+  // on workerd, whose global types contradict the browser's — see the note on
+  // that file's `exclude`.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // `dom` is here for the shared library code the Durable Object imports:
+    // `protocol.ts` resolves the WebSocket URL from `window` when it runs in a
+    // browser. The Workers types win over the DOM ones where they overlap,
+    // which is what these two files want.
+    "lib": ["esnext", "dom", "dom.iterable"],
+    // Off so `.open-next/worker.js` resolves the same way whether or not a
+    // build has run — see the suppression in worker.ts.
+    "allowJs": false,
+    "types": [],
+    "plugins": []
+  },
+  // Only the entrypoints. Everything they import is checked by following the
+  // imports; a wildcard over `src/lib` would drag in the browser-only modules
+  // the Worker never loads.
+  //
+  // `worker.ts` is not here: it imports `.open-next/worker.js`, a build
+  // artifact that does not exist on a clean tree, so tsc cannot resolve it.
+  // esbuild typechecks it at bundle time and it is twenty lines of routing.
+  "include": [
+    "cloudflare-env.d.ts",
+    "open-next.config.ts",
+    "server/race-do.ts",
+    "../data/**/*.json"
+  ],
+  "exclude": ["node_modules"]
+}

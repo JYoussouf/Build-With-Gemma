@@ -1,14 +1,20 @@
 /**
  * Serves the recorded race archives to the explore view.
  *
- * `/data` sits outside `website/`, so Next cannot serve these files from
- * `public/` without duplicating them. A route handler reads them in place,
- * which keeps `data/` the single copy.
+ * `/data` sits outside `website/`, so it is staged into `public/data` by
+ * `scripts/stage-data.ts` at build time rather than committed twice. This
+ * route reads it back from there, which is one code path for both
+ * environments: local development gets it from Next's `public/`, and the
+ * deployment gets it from Cloudflare's static assets. Cloudflare has no
+ * filesystem, so reading the file directly is not an option there.
+ *
+ * The route stays in front of the files rather than the explore view fetching
+ * `/data/...` itself, so the archives keep a single addressable API and the
+ * allowlist below still governs what is reachable.
  */
 
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import trackIndex from "@data/tracks/index.json";
+import { readArchive } from "@/lib/archives";
 
 const TRACK_KEYS = new Set(trackIndex.tracks.map((t) => t.key));
 
@@ -18,10 +24,8 @@ const FILES: Record<string, string> = {
   "1hz": "telemetry-1hz.jsonl",
 };
 
-const DATA = join(process.cwd(), "..", "data");
-
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ track: string; rate: string }> },
 ) {
   const { track, rate } = await params;
@@ -36,19 +40,19 @@ export async function GET(
     return Response.json({ error: `unknown rate: ${rate}` }, { status: 404 });
   }
 
-  try {
-    const body = await readFile(join(DATA, "timeseries", track, file), "utf8");
-    return new Response(body, {
-      headers: {
-        "content-type": "application/x-ndjson; charset=utf-8",
-        // The archives only change when generate:data is re-run.
-        "cache-control": "public, max-age=3600",
-      },
-    });
-  } catch {
+  const response = await readArchive(`/data/timeseries/${track}/${file}`, request.url);
+  if (!response.ok) {
     return Response.json(
       { error: `no ${file} for ${track} - run npm run generate:data` },
       { status: 404 },
     );
   }
+
+  return new Response(response.body, {
+    headers: {
+      "content-type": "application/x-ndjson; charset=utf-8",
+      // The archives only change when generate:data is re-run.
+      "cache-control": "public, max-age=3600",
+    },
+  });
 }
