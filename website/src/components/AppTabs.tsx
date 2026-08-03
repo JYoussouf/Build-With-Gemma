@@ -33,17 +33,14 @@ const TABS: Tab[] = [
 export function AppTabs() {
   const pathname = usePathname();
 
-  // The landing page is the way in to all of this; putting the bar there too
-  // would be navigation pointing at itself.
-  if (pathname === "/") return null;
-
   return (
     // Deliberately slim: the dashboard below it is tightly budgeted for
     // vertical space, so the bar takes as little as it can while staying
     // legible.
     <header className="flex h-9 shrink-0 items-stretch border-b border-pit-border bg-pit-black/70">
+      {/* Straight to Live rather than to `/`, which only redirects here. */}
       <Link
-        href="/"
+        href="/live"
         className="flex items-center border-r border-pit-border px-5 text-[13px] font-semibold tracking-[0.22em] text-ink transition-colors hover:text-ink-secondary"
       >
         RACEMIND

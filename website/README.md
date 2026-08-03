@@ -25,10 +25,14 @@ silent local fallback is exactly the desync this architecture removes.
 
 ## Routes
 
-| Route        | What it is                                                              |
-| ------------ | ----------------------------------------------------------------------- |
-| `/`          | Index of what is built and what is not                                   |
-| `/dashboard` | View 4 — Live Race Dashboard, three columns, engineer control panel      |
+| Route                | What it is                                                          |
+| -------------------- | ------------------------------------------------------------------- |
+| `/`                  | Redirects to `/live`. There is no landing page                       |
+| `/live`              | View 4 — Live Race Dashboard, three columns, engineer control panel  |
+| `/dashboard`         | Replays: previous runs, the pit wall replaying one, and alert logs    |
+| `/track-trace`       | GPS trace of a lap on the satellite map                              |
+| `/internals/explore` | Every channel the models emit, live or replayed                      |
+| `/internals/models`  | What each model reads and writes                                     |
 
 Views 1-3 (Track Setup, Race Configuration, Pre-Race Report) are not built yet.
 
