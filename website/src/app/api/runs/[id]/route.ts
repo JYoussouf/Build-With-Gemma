@@ -9,18 +9,18 @@
  * recorded alert is a record of what fired during that race — it is not a
  * pending item, and nothing here should ever reach the engineer's approval
  * queue or the agent feed. Replay is evidence, not telemetry.
+ *
+ * The archive half reads through `readArchive` and the database half defers
+ * its import, for the reasons given in those two modules: Workers has no
+ * filesystem, and `pg` cannot load there at all.
  */
 
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import manifest from "@data/timeseries/runs.json";
 import trackIndex from "@data/tracks/index.json";
-import { getLapSummaries, getAgentMessages, getRaceById } from "@server/db";
-
-const DATA = join(process.cwd(), "..", "data");
+import { readArchive } from "@/lib/archives";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -30,6 +30,7 @@ export async function GET(
     const raceId = id.slice(3);
 
     try {
+      const { getLapSummaries, getAgentMessages, getRaceById } = await import("@server/db");
       const race = await getRaceById(raceId);
       if (!race) {
         return Response.json({ error: `unknown db race: ${id}` }, { status: 404 });
@@ -108,24 +109,41 @@ export async function GET(
     return Response.json({ error: `unknown run: ${id}` }, { status: 404 });
   }
 
-  const dir = join(DATA, "timeseries", entry.archive);
+  const dir = `/data/timeseries/${entry.archive}`;
   try {
-    const [metaRaw, lapsRaw, alertsRaw] = await Promise.all([
-      readFile(join(dir, "meta.json"), "utf8"),
-      readFile(join(dir, "laps.json"), "utf8"),
-      readFile(join(dir, "alerts.json"), "utf8"),
+    const [metaRes, lapsRes, alertsRes] = await Promise.all([
+      readArchive(`${dir}/meta.json`, request.url),
+      readArchive(`${dir}/laps.json`, request.url),
+      readArchive(`${dir}/alerts.json`, request.url),
+    ]);
+    // A miss is a 404 body rather than a throw, so it has to be checked:
+    // parsing an error page as the run would surface as a broken replay
+    // instead of a missing one.
+    if (!metaRes.ok || !lapsRes.ok || !alertsRes.ok) {
+      throw new Error(
+        `archive incomplete: meta ${metaRes.status}, laps ${lapsRes.status}, alerts ${alertsRes.status}`,
+      );
+    }
+    const [meta, laps, alerts] = await Promise.all([
+      metaRes.json() as Promise<Record<string, unknown>>,
+      lapsRes.json(),
+      alertsRes.json(),
     ]);
     const overrides =
       "overrides" in entry ? (entry.overrides as Record<string, unknown>) : {};
     return Response.json(
       {
-        meta: { ...JSON.parse(metaRaw), ...overrides, id: entry.id, label: entry.label },
-        laps: JSON.parse(lapsRaw),
-        alerts: JSON.parse(alertsRaw),
+        meta: { ...meta, ...overrides, id: entry.id, label: entry.label },
+        laps,
+        alerts,
       },
       { headers: { "cache-control": "public, max-age=3600" } },
     );
-  } catch {
+  } catch (err) {
+    // Logged rather than swallowed: "no archive" is the right answer when the
+    // files were never generated, but it is a misleading one when the read
+    // itself failed, and the two are indistinguishable from the response.
+    console.error(`archive read failed for ${id}:`, err);
     return Response.json(
       { error: `no archive for ${id} - run npm run generate:data` },
       { status: 404 },
