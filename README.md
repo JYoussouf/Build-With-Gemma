@@ -1,4 +1,8 @@
 # RaceMind
+
+<img width="1774" height="887" alt="logo" src="https://github.com/user-attachments/assets/87bd5724-199b-405b-b834-6a20d976edbb" />
+
+
 ## Zero-latency racing intelligence - Deep simulation and race day insights
 
 **Note to Reviewers After the Hackathon:** For whom it may concern, to view the repo from the point at which it was submitted, please follow this link: https://github.com/JYoussouf/Build-With-Gemma/tree/247ec44ba20fc2f5d82296f68e2ff32c4e936e25
