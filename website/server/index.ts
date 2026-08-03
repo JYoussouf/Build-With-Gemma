@@ -187,7 +187,7 @@ function handle(message: ClientMessage) {
       const alertToApprove = race.sim.telemetry.alerts.find(a => a.id === message.id);
       race.sim = applyApprove(race.sim, message.id, message.message);
       broadcast({ type: "alerts", alerts: race.sim.telemetry.alerts });
-      if (alertToApprove) {
+      if (alertToApprove && race.dbId !== null) {
         insertEngineerDecision(
           race.dbId, alertToApprove.id, alertToApprove.lap, "approve",
           alertToApprove.message, message.message ?? null,
@@ -201,7 +201,7 @@ function handle(message: ClientMessage) {
       const alertToDismiss = race.sim.telemetry.alerts.find(a => a.id === message.id);
       race.sim = applyDismiss(race.sim, message.id);
       broadcast({ type: "alerts", alerts: race.sim.telemetry.alerts });
-      if (alertToDismiss) {
+      if (alertToDismiss && race.dbId !== null) {
         insertEngineerDecision(
           race.dbId, alertToDismiss.id, alertToDismiss.lap, "dismiss",
           alertToDismiss.message, null,
@@ -242,11 +242,6 @@ function handle(message: ClientMessage) {
       break;
 
     case "startDriving":
-<<<<<<< HEAD
-      race.control = { ...race.control, driving: true };
-      broadcast({ type: "control", control: race.control });
-      broadcast({ type: "indicator", indicator: { kind: "start", message: "Race started", urgency: "info" } });
-=======
       // A fresh run each time, so "start driving" never resumes a stale race.
       if (!race.control.driving) {
         void newRace(race.trackKey, { ...race.control, driving: true }).then(
@@ -255,21 +250,18 @@ function handle(message: ClientMessage) {
             broadcast({ type: "meta", meta: metaOf(race) });
             broadcast({ type: "control", control: race.control });
             for (const socket of clients) snapshotFor(socket);
+            broadcast({ type: "indicator", indicator: { kind: "start", message: "Race started", urgency: "info" } });
           },
         );
       } else {
         broadcast({ type: "control", control: race.control });
       }
->>>>>>> 228fd3f769cb140da7e04e205d2f71b5177e5dae
       break;
 
     case "stopDriving":
       race.control = { ...race.control, driving: false };
       broadcast({ type: "control", control: race.control });
-<<<<<<< HEAD
       broadcast({ type: "indicator", indicator: { kind: "stop", message: "Race stopped", urgency: "warn" } });
-=======
->>>>>>> 228fd3f769cb140da7e04e205d2f71b5177e5dae
       break;
 
     case "reset":
@@ -371,13 +363,9 @@ wss.on("connection", (socket) => {
 // The race advances whether or not anyone is watching, so a client that joins
 // late sees a race in progress rather than one that starts when they arrive.
 setInterval(() => {
-<<<<<<< HEAD
-  if (!race.control.driving || !race.control.running || race.sim.telemetry.status !== "live") return;
-=======
   // Nothing to simulate until someone drives.
   if (!race.control.driving) return;
   if (!race.control.running || race.sim.telemetry.status !== "live") return;
->>>>>>> 228fd3f769cb140da7e04e205d2f71b5177e5dae
 
   const before = race.sim.telemetry;
   const dt = (TICK_MS / 1000) * race.control.speedMultiplier;
@@ -432,9 +420,6 @@ setInterval(() => {
 }, TICK_MS);
 
 async function main() {
-<<<<<<< HEAD
-  race = await newRace(DEFAULT_TRACK_KEY, { driving: false, running: true, speedMultiplier: 4 });
-=======
   race = await newRace(DEFAULT_TRACK_KEY, {
     // Stationary until someone drives. A server that comes up mid-race is the
     // thing the Live view's stationary state exists to prevent.
@@ -442,7 +427,6 @@ async function main() {
     running: true,
     speedMultiplier: 4,
   });
->>>>>>> 228fd3f769cb140da7e04e205d2f71b5177e5dae
   console.log(
     `race server on ws://localhost:${port}\n` +
       `  track ${race.trackKey}, ${race.sim.telemetry.totalLaps} laps, ` +
